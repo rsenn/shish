@@ -27,6 +27,7 @@ int builtin_errmsg_nonl(char* argv[], char* s, char* msg);
 int builtin_errmsg(char* argv[], char* s, char* msg);
 int builtin_error(char* argv[], char* s);
 int builtin_invopt(char* argv[]);
+void builtin_usage(const struct builtin_cmd* b, buffer* out);
 
 /* builtin prototypes
  * ----------------------------------------------------------------------- */

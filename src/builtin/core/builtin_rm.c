@@ -6,6 +6,7 @@
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/stralloc.h"
+#include "../../../lib/path.h"
 #include "../../../lib/str.h"
 #include "../../../lib/unix.h"
 #include <unistd.h>
@@ -67,10 +68,7 @@ rm_tree(char* argv[], stralloc* path, int force, int verbose, int interactive, i
       if(!str_diff(de->d_name, ".") || !str_diff(de->d_name, ".."))
         continue;
 
-      path->len = dirlen;
-      stralloc_catc(path, '/');
-      stralloc_cats(path, de->d_name);
-      stralloc_nul(path);
+      path_cat_sa(path, path->s, dirlen, de->d_name, str_len(de->d_name));
 
       if(rm_tree(argv, path, force, verbose, interactive, &skipped))
         ret = 1;
@@ -164,7 +162,10 @@ const char help_rm[] = "    Remove files or directories.\n"
                        "    -i              ask before removing each file and directory\n"
                        "    -d              also remove empty directories\n"
                        "    -v              print each file/directory removed\n"
-                       "    file            file (or, with -r, directory) to remove\n";
+                       "    file            file (or, with -r, directory) to remove\n"
+                       "\n"
+                       "    long options: --force -f, --interactive -i, --recursive -r,\n"
+                       "                  --recursive -R, --dir -d, --verbose -v\n";
 
 int
 builtin_rm(int argc, char* argv[]) {
@@ -173,7 +174,7 @@ builtin_rm(int argc, char* argv[]) {
   char* p;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "vfrRid")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "vfrRid", "force=f interactive=i recursive=r recursive=R dir=d verbose=v")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
       case 'f': force = 1, interactive = 0; break;
@@ -181,7 +182,7 @@ builtin_rm(int argc, char* argv[]) {
       case 'd': dirs = 1; break;
       case 'r':
       case 'R': recursive = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

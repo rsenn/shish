@@ -8,6 +8,7 @@
 #include "../../../lib/shell.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/str.h"
+#include "../../../lib/path.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/stralloc.h"
 #include "../../../lib/unix.h"
@@ -222,10 +223,7 @@ chmod_path(char* argv[],
       if(!str_diff(de->d_name, ".") || !str_diff(de->d_name, ".."))
         continue;
 
-      path->len = dirlen;
-      stralloc_catc(path, '/');
-      stralloc_cats(path, de->d_name);
-      stralloc_nul(path);
+      path_cat_sa(path, path->s, dirlen, de->d_name, str_len(de->d_name));
 
       if(chmod_path(argv, path, spec, symbolic, octal_mode, recursive, force, verbose, changes, 0))
         ret = 1;
@@ -250,7 +248,10 @@ const char help_chmod[] = "    Change file permissions.\n"
                           "    mode            octal number, or symbolic \"[ugoa]+-=[rwxX]\",\n"
                           "                    comma-separated clauses applied to each file's\n"
                           "                    current mode (e.g. \"u+rwx,go-w\")\n"
-                          "    file            file(s) to change the mode of\n";
+                          "    file            file(s) to change the mode of\n"
+                          "\n"
+                          "    long options: --recursive -R, --verbose -v, --changes -c, --silent -f,\n"
+                          "                  --quiet -f\n";
 
 int
 builtin_chmod(int argc, char* argv[]) {
@@ -276,13 +277,13 @@ builtin_chmod(int argc, char* argv[]) {
   }
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "vcfR")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "vcfR", "recursive=R verbose=v changes=c silent=f quiet=f")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
       case 'c': changes = 1; break;
       case 'f': force = 1; break;
       case 'R': recursive = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

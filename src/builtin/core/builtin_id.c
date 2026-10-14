@@ -22,7 +22,9 @@ const char help_id[] = "    Print user and group identity.\n"
                        "    -G              print all group IDs\n"
                        "    -n              print names instead of numbers (with -u, -g, -G)\n"
                        "    -r              print the real ID instead of the effective one\n"
-                       "    user            print the identity of this user instead\n";
+                       "    user            print the identity of this user instead\n"
+                       "\n"
+                       "    long options: --user -u, --group -g, --groups -G, --name -n, --real -r\n";
 
 #if WINDOWS_NATIVE || defined(__wasi__) || defined(__wasm__)
 
@@ -74,7 +76,7 @@ builtin_id(int argc, char* argv[]) {
   const char* user = 0;
   struct passwd* pw = 0;
 
-  while((c = shell_getopt(argc, argv, "ugGnr")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "ugGnr", "user=u group=g groups=G name=n real=r")) > 0) {
     switch(c) {
       case 'u':
       case 'g':
@@ -88,7 +90,7 @@ builtin_id(int argc, char* argv[]) {
         break;
       case 'n': names = 1; break;
       case 'r': real = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

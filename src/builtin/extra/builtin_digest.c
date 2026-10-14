@@ -170,8 +170,7 @@ builtin_digest(int argc, char* argv[]) {
 
   /* no options: any that shell_getopt() returns is invalid */
   if(shell_getopt(argc, argv, "") > 0) {
-    builtin_invopt(argv);
-    return 1;
+    return builtin_invopt(argv);
   }
 
   nfiles = argc - shell_optind;

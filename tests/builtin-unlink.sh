@@ -45,7 +45,7 @@ assert_equal "1" "$?" "no operand fails"
 unlink p q 2>/dev/null
 assert_equal "1 0 0" "$? $(test -e p; echo $?) $(test -e q; echo $?)" "two operands fail and remove nothing"
 unlink -f p 2>/dev/null
-assert_equal "1 0" "$? $(test -e p; echo $?)" "there are no options"
+assert_equal "2 0" "$? $(test -e p; echo $?)" "there are no options"
 unlink '' 2>/dev/null
 assert_equal "1" "$?" "an empty name fails"
 

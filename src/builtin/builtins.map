@@ -40,7 +40,7 @@ export      builtin_export.c                m   -
 expr        core/builtin_expr.c             m   ../../text/dfa/
 false       core/builtin_false.c            d   -
 fdtable     builtin_fdtable.c               d   -
-find        extra/builtin_find.c            x   -
+find        extra/builtin_find.c            x   ../../text/dfa/
 getopts     builtin_getopts.c               m   -
 grep        filter/builtin_grep.c           x   ../../text/dfa/
 hash        builtin_hash.c                  m   -

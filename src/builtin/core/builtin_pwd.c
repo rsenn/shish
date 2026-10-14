@@ -23,7 +23,7 @@ builtin_pwd(int argc, char* argv[]) {
     switch(c) {
       case 'P': physical++; break;
       case 'L': physical = 0; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

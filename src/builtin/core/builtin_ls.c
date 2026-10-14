@@ -4,6 +4,7 @@
 
 #include "../../../lib/byte.h"
 #include "../../../lib/str.h"
+#include "../../../lib/path.h"
 #include "../../../lib/uint64.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/stralloc.h"
@@ -61,6 +62,7 @@ struct ls_opts {
   unsigned across : 1;
   unsigned follow_cmd : 1; /* -H: operand symlinks are followed */
   unsigned follow_all : 1; /* -L: every symlink is followed */
+  unsigned color : 1;      /* --color: names in SGR colours */
 };
 
 /* one directory entry plus what lstat() said about it */
@@ -264,6 +266,38 @@ ls_put_suffix(buffer* b, unsigned int mode) {
     buffer_putc(b, c);
 }
 
+/* SGR colour of an entry (--color): dirs 94, symlinks 36, executables 33, fifos/sockets 35, devices 93 */
+static const char*
+ls_color(unsigned int mode) {
+  if(S_ISDIR(mode))
+    return "94";
+  if(S_ISLNK(mode))
+    return "36";
+  if(S_ISREG(mode))
+    return mode & 0111 ? "33" : 0;
+  if(S_ISFIFO(mode) || S_ISSOCK(mode))
+    return "35";
+  return S_ISCHR(mode) || S_ISBLK(mode) ? "93" : 0;
+}
+
+/* the name, coloured with --color, unprintable bytes as '?' with -q */
+static void
+ls_put_name(buffer* b, const char* name, unsigned int mode) {
+  const char* code = ls_o.color ? ls_color(mode) : 0;
+
+  if(code) {
+    buffer_puts(b, "\033[");
+    buffer_puts(b, code);
+    buffer_putc(b, 'm');
+  }
+
+  for(; *name; name++)
+    buffer_putc(b, ls_o.quote && ((unsigned char)*name < 32 || *name == 127) ? '?' : *name);
+
+  if(code)
+    buffer_puts(b, "\033[0m");
+}
+
 /* prints one entry: [inode ][mode links owner group size date ]name[marker][ -> target].
  * The entry was lstat()ed, so a symlink shows as itself, with its target.
  * ----------------------------------------------------------------------- */
@@ -311,14 +345,7 @@ ls_put(const struct ls_ent* e) {
     buffer_putspace(fd_out->w);
   }
 
-  if(ls_o.quote) {
-    const char* q;
-
-    for(q = e->name; *q; q++)
-      buffer_putc(fd_out->w, (unsigned char)*q < 32 || *q == 127 ? '?' : *q);
-  } else {
-    buffer_puts(fd_out->w, e->name);
-  }
+  ls_put_name(fd_out->w, e->name, st->st_mode);
 
   ls_put_suffix(fd_out->w, st->st_mode);
 
@@ -508,12 +535,7 @@ ls_stat(char* argv[], struct ls_ent* e, const char* dir, const char* name) {
   stralloc_init(&full);
 
   if(dir) {
-    stralloc_copys(&full, dir);
-
-    if(full.len && full.s[full.len - 1] != '/')
-      stralloc_catc(&full, '/');
-
-    stralloc_cats(&full, name);
+    path_cat_sa(&full, dir, str_len(dir), name, str_len(name));
   } else {
     stralloc_copys(&full, name);
   }
@@ -612,6 +634,10 @@ const char help_ls[] = "    List directory contents.\n"
                        "    -S              sort by size, largest first\n"
                        "    -t              sort by modification time, newest first\n"
                        "    -1              one entry per line (default)\n"
+                       "    --color[=WHEN]  colour names: yes (default), no, auto (a terminal, no NO_COLOR)\n"
+                       "                    dirs light blue, symlinks cyan, executables yellow\n"
+                       "    long names: --all -a, --almost-all -A, --directory -d, --classify -F, --recursive -R,\n"
+                       "    --reverse -r, --inode -i, --dereference -L, --size -s, --numeric-uid-gid -n\n"
                        "    file            file or directory to list; defaults to '.'\n";
 
 int
@@ -624,7 +650,7 @@ builtin_ls(int argc, char* argv[]) {
 
   byte_zero(&ls_o, sizeof(ls_o));
 
-  while((c = shell_getopt(argc, argv, "AaCcdFfgHiklLmnopqRrSstux1")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "AaCcdFfgHiklLmnopqRrSstux1", "all=a almost-all=A directory=d classify=F recursive=R reverse=r inode=i dereference=L dereference-command-line=H size=s numeric-uid-gid=n hide-control-chars=q color?=G")) > 0) {
     switch(c) {
       case 'A': ls_o.almost = 1; break;
       case 'a': ls_o.all = 1; break;
@@ -651,8 +677,22 @@ builtin_ls(int argc, char* argv[]) {
       case 'r': ls_o.reverse = 1; break;
       case 'S': ls_o.by_size = 1; break;
       case 't': ls_o.by_time = 1; break;
+      case 'G': {
+        const char* a = shell_optarg;
+        const char* t;
+
+        if(!a || str_equal(a, "yes") || str_equal(a, "always") || str_equal(a, "force"))
+          ls_o.color = 1;
+        else if(str_equal(a, "auto") || str_equal(a, "tty") || str_equal(a, "if-tty"))
+          ls_o.color = isatty(fd_out->e) && (t = var_value("TERM", NULL)) && str_diff(t, "dumb") && !((t = var_value("NO_COLOR", NULL)) && *t);
+        else if(!str_equal(a, "no") && !str_equal(a, "never") && !str_equal(a, "none")) {
+          builtin_errmsg(argv, "--color", "invalid argument");
+          return 2;
+        }
+        break;
+      }
       case '1': ls_o.cols = ls_o.across = ls_o.comma = 0; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

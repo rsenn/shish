@@ -37,11 +37,62 @@ main(void) {
   stralloc sa;
   stralloc_init(&sa);
 
-  /* TEST: char* path_basename(path, *len)  */
-  CHECK_STREQUAL(path_basename("/usr/lib", NULL), "lib");
-  CHECK(path_basename("/usr/include/", &len) && len == str_len("include"));
-  CHECK(path_basename("//", &len) && len == str_len("/"));
-  CHECK_STREQUAL(path_basename("", &len), "");
+  /* TEST: const char* path_basename(p, n, *len)  */
+  CHECK_STREQUAL(path_basename_s("/usr/lib"), "lib");
+  CHECK(path_basename(B("/usr/include/"), &len) && len == str_len("include"));
+  CHECK(path_basename(B("//"), &len) && len == str_len("/"));
+  CHECK_STREQUAL(path_basename_s(""), "");
+  CHECK(path_basename(B("/usr/lib//"), NULL) && path_basename(B("/usr/lib//"), &len) && len == 3);
+
+  /* TEST: size_t path_cat(out, cap, a, an, b, bn)  */
+  {
+    char buf[16];
+    size_t n;
+
+    n = path_cat(buf, sizeof buf, B("a"), B("b"));
+    CHECK(n == 3 && !byte_diff(buf, 4, "a/b"));
+    n = path_cat(buf, sizeof buf, B("a/"), B("b"));
+    CHECK(n == 3 && !byte_diff(buf, 4, "a/b"));
+    n = path_cat(buf, sizeof buf, B(""), B("b"));
+    CHECK(n == 1 && !byte_diff(buf, 2, "b"));
+    n = path_cat(buf, sizeof buf, B("a"), B(""));
+    CHECK(n == 1 && !byte_diff(buf, 2, "a"));
+    n = path_cat(buf, sizeof buf, B("a"), B("/b"));
+    CHECK(n == 2 && !byte_diff(buf, 3, "/b"));
+
+    /* in place: the walker idiom */
+    byte_copy(buf, 2, "a");
+    n = path_cat(buf, sizeof buf, buf, 1, B("bc"));
+    CHECK(n == 4 && !byte_diff(buf, 5, "a/bc"));
+
+    /* all or nothing: too small a buffer is left untouched */
+    byte_copy(buf, 5, "xxxx");
+    CHECK(path_cat(buf, 4, B("a"), B("bc")) == 4 && !byte_diff(buf, 5, "xxxx"));
+    CHECK(path_cat(0, 0, B("a"), B("bc")) == 4);
+  }
+
+  /* TEST: size_t path_canon(out, cap, p, n)  */
+  {
+    static const char* const tab[][2] = {
+        {"", "."}, {".", "."}, {"..", ".."}, {"/", "/"}, {"/..", "/"}, {"a/", "a"}, {"a//b/./c/../d", "a/b/d"},
+        {"a/b/..", "a"}, {"a/..", "."}, {"../..", "../.."}, {"x/../../y", "../y"}, {"./a", "a"}, {"/a/b/../../..", "/"},
+        {"/this/is/a/test/dir/..", "/this/is/a/test"},
+    };
+    char buf[64];
+    size_t i, n;
+
+    for(i = 0; i < sizeof(tab) / sizeof(tab[0]); ++i) {
+      n = path_canon(buf, sizeof buf, tab[i][0], str_len(tab[i][0]));
+      check(n == str_len(tab[i][1]) && !byte_diff(buf, n + 1, tab[i][1]), tab[i][0]);
+    }
+
+    byte_copy(buf, 9, "a/b/../c");
+    n = path_canon(buf, sizeof buf, buf, 8);
+    CHECK(n == 3 && !byte_diff(buf, 4, "a/c"));
+
+    byte_copy(buf, 5, "xxxx");
+    CHECK(path_canon(buf, 4, B("a/b")) == 4 && !byte_diff(buf, 5, "xxxx"));
+  }
 
   /* TEST: int path_canonicalize(path, sa, symbolic)  */
   CHECK_STREQUAL((path_canonicalize("~/Documents/blah/../dummy/test.txt", &sa, 0), sa.s), "~/Documents/dummy/test.txt");
@@ -50,13 +101,13 @@ main(void) {
   buffer_putsa(buffer_2, &sa);
   buffer_putnlflush(buffer_2);
 
-  /* TEST: size_t path_dirlenb(path, len) */
-  CHECK(path_dirlenb("a/b/c", 5) == 3);
-  CHECK(path_dirlenb("a//b/", 5) == 1);
-  CHECK(path_dirlenb("/a", 2) == 1);
-  CHECK(path_dirlenb("a", 1) == 0);
-  CHECK(path_dirlenb("/", 1) == 1);
-  CHECK(path_dirlenb("", 0) == 0);
+  /* TEST: size_t path_dirlen(path, len) */
+  CHECK(path_dirlen("a/b/c", 5) == 3);
+  CHECK(path_dirlen("a//b/", 5) == 1);
+  CHECK(path_dirlen("/a", 2) == 1);
+  CHECK(path_dirlen("a", 1) == 0);
+  CHECK(path_dirlen("/", 1) == 1);
+  CHECK(path_dirlen("", 0) == 0);
 
   /* TEST: int path_fnmatch(pattern, plen, string, slen, flags) */
   CHECK(path_fnmatch(B("foo"), B("foo"), 0) == 0);
@@ -114,7 +165,7 @@ main(void) {
     CHECK(path_getcwd(&cwd));
     CHECK(cwd.len);
     CHECK(cwd.a > cwd.len && cwd.s[cwd.len] == '\0');
-    CHECK(path_rootlenb(cwd.s, cwd.len));
+    CHECK(path_rootlen(cwd.s, cwd.len));
   }
 
   /* TEST: char* path_gethome(uid)  */
@@ -129,14 +180,14 @@ main(void) {
   CHECK_EQUAL(path_lenb(B("/usr")), 0);
   CHECK_EQUAL(path_lenb(B("//usr")), 0);
 
-  /* TEST: size_t path_rootlenb(x, n)  */
-  CHECK_EQUAL(path_rootlenb(B("some/dir")), 0);
-  CHECK_EQUAL(path_rootlenb(B("/some/dir")), 1);
-  CHECK_EQUAL(path_rootlenb(B("//some/dir")), 2);
+  /* TEST: size_t path_rootlen(x, n)  */
+  CHECK_EQUAL(path_rootlen(B("some/dir")), 0);
+  CHECK_EQUAL(path_rootlen(B("/some/dir")), 1);
+  CHECK_EQUAL(path_rootlen(B("//some/dir")), 2);
 #if WINDOWS
-  CHECK_EQUAL(path_rootlenb(B("c:/windows")), 3);
-  CHECK_EQUAL(path_rootlenb(B("c:system32")), 2);
-  CHECK_EQUAL(path_rootlenb(B("c:/windows/")), 3);
+  CHECK_EQUAL(path_rootlen(B("c:/windows")), 3);
+  CHECK_EQUAL(path_rootlen(B("c:system32")), 2);
+  CHECK_EQUAL(path_rootlen(B("c:/windows/")), 3);
 #endif
 
   /* TEST: size_t path_rootlen(s)  */
@@ -149,12 +200,12 @@ main(void) {
   CHECK_EQUAL(path_rootlen("c:/windows/"), 3);
 #endif*/
 
-  /* TEST: size_t path_dirlenb(x, n)  */
-  CHECK_EQUAL(path_dirlenb(B("some/dir")), 4);
-  CHECK_EQUAL(path_dirlenb(B("/some/dir")), 5);
-  CHECK_EQUAL(path_dirlenb(B("//some/dir")), 6);
+  /* TEST: size_t path_dirlen(x, n)  */
+  CHECK_EQUAL(path_dirlen(B("some/dir")), 4);
+  CHECK_EQUAL(path_dirlen(B("/some/dir")), 5);
+  CHECK_EQUAL(path_dirlen(B("//some/dir")), 6);
 #if WINDOWS
-  CHECK_EQUAL(path_dirlenb(B("c:/windows/system32")), 10);
+  CHECK_EQUAL(path_dirlen(B("c:/windows/system32")), 10);
 #endif
 
   /* TEST: SizePair path_commonlenb(b, blen, t, tlen)  */

@@ -41,7 +41,13 @@ const char help_xargs[] = "    Construct argument lists and invoke utility\n"
                           "\n"
                           "    Input arguments are separated by blanks and newlines; '...', \"...\" and\n"
                           "    backslash quote (not with -0/-d). With no input the utility runs once\n"
-                          "    (not with -r or -I).\n";
+                          "    (not with -r or -I).\n"
+                          "\n"
+                          "    long options: --null -0, --arg-file=ARG -a, --delimiter=ARG -d,\n"
+                          "                  --max-lines=ARG -L, --max-args=ARG -n,\n"
+                          "                  --max-procs=ARG -P, --interactive -p,\n"
+                          "                  --no-run-if-empty -r, --max-chars=ARG -s, --verbose -t,\n"
+                          "                  --exit -x, --open-tty -o\n";
 
 struct args {
   char** v;
@@ -326,7 +332,7 @@ builtin_xargs(int argc, char* argv[]) {
   unsigned exit_if_size = 0;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "0a:d:E:I:L:l:n:oP:prs:tx")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "0a:d:E:I:L:l:n:oP:prs:tx", "null=0 arg-file:=a delimiter:=d max-lines:=L max-args:=n max-procs:=P interactive=p no-run-if-empty=r max-chars:=s verbose=t exit=x open-tty=o")) > 0) {
     switch(c) {
       case '0': sep = '\0', sepmode = 2; break;
       case 'a': input_file = shell_optarg; break;
@@ -342,7 +348,7 @@ builtin_xargs(int argc, char* argv[]) {
       case 's': scan_ulong(shell_optarg, &max_size); break;
       case 't': opts.trace = 1; break;
       case 'x': exit_if_size = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

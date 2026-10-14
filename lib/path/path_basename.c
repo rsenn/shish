@@ -1,44 +1,28 @@
-/* from dietlibc by felix leitner, adapted to libowfat */
 #include "../path_internal.h"
-#include "../str.h"
 
-/* last component of path, POSIX basename(1) rules; *len gets its length
+/* last component of p[0..n), POSIX basename(1) rules, as a view; *len (if not NULL) gets its length
  *
- *   path           basename
- *   "/usr/lib"     "lib"
- *   "/usr/"        "usr"      trailing separators are not part of it
- *   "//"           "/"        only separators: one of them
- *   ""             ""
- *
- * The string is not modified.
- * len may be NULL when path has no trailing separator.
+ *   "/usr/lib"  -> "lib"
+ *   "/usr/"     -> "usr"     trailing separators are not part of it
+ *   "//"        -> "/"       only separators: the first one
+ *   ""          -> ""
  * ----------------------------------------------------------------------- */
 const char*
-path_basename(const char* path, size_t* len) {
-  const char *x, *y = path + str_len(path);
+path_basename(const char* p, size_t n, size_t* len) {
+  size_t end = n, start;
 
-  if(path < y && path_issep(*path)) {
-    /* all separators -> the first one */
-    for(x = path; x < y; x++)
-      if(!path_issep(*x))
-        break;
+  if(n && path_issep(*p) && path_seplen(p, n) == n) {
+    if(len)
+      *len = 1;
 
-    if(x == y) {
-      if(len)
-        *len = 1;
-
-      return path;
-    }
+    return p;
   }
 
-  /* trim trailing separators */
-  y  -= path_rseplen(path, y - path);
-
-  /* scan backwards to find the start of the basename component */
-  x = y - path_rcomlen(path, y - path);
+  end -= path_rseplen(p, end);
+  start = end - path_rcomlen(p, end);
 
   if(len)
-    *len = y - x;
+    *len = end - start;
 
-  return x;
+  return p + start;
 }

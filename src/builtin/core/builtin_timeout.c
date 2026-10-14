@@ -35,46 +35,6 @@ const char help_timeout[] = "    Run COMMAND, killing it if it's still running a
                             "    exit status: 124 on timeout, 137 if KILL was needed, 125 usage error,\n"
                             "    126/127 not executable/not found, otherwise COMMAND's status\n";
 
-/* removes 'n' argv slots starting at 'i', shifting the rest down;
- * 'argc' is adjusted in place.
- * ----------------------------------------------------------------------- */
-static void
-remove_args(char* argv[], int* argc, int i, int n) {
-  byte_copyr(&argv[i], (*argc - i - n) * sizeof(char*), &argv[i + n]);
-  *argc -= n;
-}
-
-/* pulls "NAME VALUE" or "NAME=VALUE" out of argv, wherever it
- * appears, returning VALUE, NULL if absent, or (char*)-1 if NAME was
- * given without a value.
- * ----------------------------------------------------------------------- */
-static char*
-extract_longopt(char* argv[], int* argc, const char* name) {
-  size_t namelen = str_len(name);
-  int i;
-
-  for(i = 1; i < *argc; i++) {
-    if(str_equal(argv[i], name)) {
-      char* val = argv[i + 1];
-
-      if(!val)
-        return (char*)-1;
-
-      remove_args(argv, argc, i, 2);
-      return val;
-    }
-
-    if(!str_diffn(argv[i], name, namelen) && argv[i][namelen] == '=') {
-      char* val = argv[i] + namelen + 1;
-
-      remove_args(argv, argc, i, 1);
-      return val;
-    }
-  }
-
-  return NULL;
-}
-
 /* parses "NUMBER[.FRACTION][smhd]" (the same grammar as the sleep
  * builtin) into whole microseconds. Returns 0 on success, -1 if 's'
  * isn't a valid duration.
@@ -193,22 +153,14 @@ builtin_timeout(int argc, char* argv[]) {
   struct command cmd;
   struct sigaction sa, oldsa;
 
-  kill_after_arg = extract_longopt(argv, &argc, "--kill-after");
-  signal_arg = extract_longopt(argv, &argc, "--signal");
-
-  if(kill_after_arg == (char*)-1 || signal_arg == (char*)-1) {
-    builtin_errmsg(argv, "option requires an argument", NULL);
-    return 125;
-  }
-
-  while((c = shell_getopt(argc, argv, "fk:ps:v")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "fk:ps:v", "foreground=f preserve-status=p kill-after:=k signal:=s verbose=v")) > 0) {
     switch(c) {
       case 'f': break;
       case 'p': preserve = 1; break;
       case 'k': kill_after_arg = shell_optarg; break;
       case 's': signal_arg = shell_optarg; break;
       case 'v': verbose = 1; break;
-      default: builtin_invopt(argv); return 125;
+      default: return builtin_invopt(argv) ? 125 : 0;
     }
   }
 

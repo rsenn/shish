@@ -3,6 +3,7 @@
 #include "../parse.h"
 #include "../var.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../../lib/stralloc.h"
 #include <sys/stat.h>
 #include <unistd.h>
@@ -79,7 +80,7 @@ type_all(char* name, int mask, int type_name, int print_path) {
   }
 
   /* a name with a slash is its own path */
-  if(name[str_chr(name, '/')]) {
+  if(!path_isname(name, str_len(name))) {
     if((cmd = exec_hash(name, H_FUNCTION | H_BUILTIN | H_SBUILTIN)).path) {
       type_print(name, TYPE_FILE, cmd.path, 0, type_name, print_path);
       found = 1;

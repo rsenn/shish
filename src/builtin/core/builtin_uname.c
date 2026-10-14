@@ -23,7 +23,11 @@ const char help_uname[] = "    Print system information.\n"
                           "    -r              kernel release\n"
                           "    -v              kernel version\n"
                           "    -m              machine hardware name\n"
-                          "    -i              hardware platform\n";
+                          "    -i              hardware platform\n"
+                          "\n"
+                          "    long options: --all -a, --nodename -n, --kernel-release -r,\n"
+                          "                  --kernel-name -s, --machine -m, --processor -p,\n"
+                          "                  --kernel-version -v, --operating-system -o\n";
 
 int
 builtin_uname(int argc, char* argv[]) {
@@ -32,7 +36,7 @@ builtin_uname(int argc, char* argv[]) {
   struct utsname unbuf;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "amnrspvio")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "amnrspvio", "all=a nodename=n kernel-release=r kernel-name=s machine=m processor=p kernel-version=v operating-system=o")) > 0) {
     switch(c) {
       case 'a': all = 1; break;
       case 'm': machine = 1; break;
@@ -44,7 +48,7 @@ builtin_uname(int argc, char* argv[]) {
       case 'i': hw_platform = 1; break;
       case 'o': os_name = 1; break;
 
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

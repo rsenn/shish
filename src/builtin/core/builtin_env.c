@@ -21,7 +21,9 @@ const char help_env[] = "    Run a utility in a changed environment, or print th
                         "    utility         command to run (functions are not considered)\n"
                         "    argument        argument for utility\n"
                         "\n"
-                        "    Without utility the resulting environment is printed.\n";
+                        "    Without utility the resulting environment is printed.\n"
+                        "\n"
+                        "    long options: --ignore-environment -i, --unset=ARG -u\n";
 
 /* hide a variable for the utility: a local, unexported, unset shadow
  * ----------------------------------------------------------------------- */
@@ -44,14 +46,14 @@ builtin_env(int argc, char* argv[]) {
 
   stralloc_init(&names);
 
-  while((c = shell_getopt(argc, argv, "iu:")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "iu:", "ignore-environment=i unset:=u")) > 0) {
     switch(c) {
       case 'i': clear = 1; break;
       case 'u':
         stralloc_cats(&names, shell_optarg);
         stralloc_catc(&names, '\0');
         break;
-      default: builtin_invopt(argv); ret = 125; goto done;
+      default: ret = builtin_invopt(argv) ? 125 : 0; goto done;
     }
   }
 

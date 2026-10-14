@@ -1,0 +1,262 @@
+diff --git a/lib/shell.h b/lib/shell.h
+index 0c7fcdf4..2bac4afd 100644
+--- a/lib/shell.h
++++ b/lib/shell.h
+@@ -19,9 +19,21 @@ struct optstate {
+   int ind, ofs, opt;
+   char* arg;
+   char prefix;
++  const char* lname; /* the "--name[=value]" word of the last long option, for messages */
++  int err;           /* SHELL_OPTERR_* of the last '?' or ':' return */
+ };
+ 
++/* shell_getopt_long: longopts is "name=X name:=X name?=X ...", see doc/getopt-long.md.
++ * "--help" is known to every caller and returns SHELL_OPT_HELP. */
++#define SHELL_OPT_HELP 0x100
++#define SHELL_OPTERR_UNKNOWN 1
++#define SHELL_OPTERR_MISSING 2
++#define SHELL_OPTERR_NOARG 3
++#define SHELL_OPTERR_HELP 4
++
++int shell_getopt_long_r(struct optstate*, int argc, char* const argv[], const char* optstring, const char* longopts);
+ int shell_getopt_r(struct optstate*, int argc, char* const argv[], const char* optstring);
++int shell_getopt_long(int argc, char* const argv[], const char* optstring, const char* longopts);
+ int shell_getopt(int argc, char* const argv[], const char* optstring);
+ 
+ extern struct optstate shell_opt;
+@@ -32,6 +44,8 @@ extern struct optstate shell_opt;
+ #define shell_optopt shell_opt.opt
+ #define shell_optprefix shell_opt.prefix
+ #define shell_optprefixes shell_opt.prefixes
++#define shell_optlname shell_opt.lname
++#define shell_opterr shell_opt.err
+ 
+ /* set the output buffer and the basename for error messages */
+ void shell_init(buffer* b, const char* n);
+diff --git a/lib/shell/shell_getopt.c b/lib/shell/shell_getopt.c
+index 76d0dc04..0ce6b74e 100644
+--- a/lib/shell/shell_getopt.c
++++ b/lib/shell/shell_getopt.c
+@@ -7,7 +7,7 @@
+ #include "../str.h"
+ 
+ static const char default_prefixes[] = {'-', 0};
+-struct optstate shell_opt = {default_prefixes, 0, 0, 0, 0, 0};
++struct optstate shell_opt = {default_prefixes, 0, 0, 0, 0, 0, 0, 0};
+ 
+ static void
+ state_clear(struct optstate* st) {
+@@ -20,8 +20,17 @@ state_clear(struct optstate* st) {
+ 
+ int
+ shell_getopt(int argc, char* const argv[], const char* optstring) {
++  return shell_getopt_long_r(&shell_opt, argc, argv, optstring, 0);
++}
++
++int
++shell_getopt_long(int argc, char* const argv[], const char* optstring, const char* longopts) {
++  return shell_getopt_long_r(&shell_opt, argc, argv, optstring, longopts);
++}
+ 
+-  return shell_getopt_r(&shell_opt, argc, argv, optstring);
++int
++shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
++  return shell_getopt_long_r(state, argc, argv, optstring, 0);
+ }
+ 
+ #define optind state->ind
+@@ -31,8 +40,74 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
+ #define prefix state->prefix
+ #define prefixchars state->prefixes
+ 
++/* "--name", "--name=value" or "--name value" at argv[optind]; longopts is "name=X name:=X name?=X ..."
++ *
++ *   name=X   flag, returns X              name:=X  required argument     name?=X  optional argument (--name=value only)
++ *
++ * --help is known to every caller; a longopts word "help" overrides it.
++ * ----------------------------------------------------------------------- */
++static int
++getopt_long(struct optstate* state, char* const argv[], const char* longopts) {
++  const char* name = argv[optind] + 2;
++  size_t nl = str_chr(name, '=');
++  const char* w = longopts;
++
++  state->lname = argv[optind];
++
++  while(w && *w) {
++    size_t l = str_chr(w, ' ');
++    size_t n = 0;
++
++    while(n < l && w[n] != '=' && w[n] != ':' && w[n] != '?')
++      n++;
++
++    if(n == nl && !str_diffn(w, name, nl)) {
++      char mode = w[n] == '=' ? 0 : w[n];
++      int code = (unsigned char)w[n + (mode ? 2 : 1)];
++      int hasval = name[nl] == '=';
++
++      optopt = code;
++      optarg = 0;
++
++      if(mode == 0 && hasval) {
++        state->err = SHELL_OPTERR_NOARG;
++        optind++;
++        return '?';
++      }
++
++      if(mode && hasval) {
++        optarg = (char*)name + nl + 1;
++      } else if(mode == ':') {
++        if(!(optarg = argv[optind + 1])) {
++          state->err = SHELL_OPTERR_MISSING;
++          optind++;
++          return ':';
++        }
++
++        optind++;
++      }
++
++      optind++;
++      return code;
++    }
++
++    w += l;
++    w += *w == ' ';
++  }
++
++  optind++;
++
++  if(nl == 4 && !str_diffn(name, "help", 4) && !name[4]) {
++    state->err = SHELL_OPTERR_HELP;
++    return SHELL_OPT_HELP;
++  }
++
++  state->err = SHELL_OPTERR_UNKNOWN;
++  return '?';
++}
++
+ int
+-shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
++shell_getopt_long_r(struct optstate* state, int argc, char* const argv[], const char* optstring, const char* longopts) {
+   unsigned int offset;
+ 
+   if(optind == 0) {
+@@ -48,6 +123,9 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
+     optind++;
+   }
+ 
++  state->err = 0;
++  state->lname = 0;
++
+ again:
+   /* are we finished? */
+   if(optind > argc || !argv[optind])
+@@ -65,6 +143,10 @@ again:
+     return -1;
+   }
+ 
++  /* a long option; "+" callers (set, sh) keep their own meaning of "--name" */
++  if(prefixchars == default_prefixes && optofs == 0 && argv[optind][1] == '-')
++    return getopt_long(state, argv, longopts);
++
+   /* get next option char */
+   optopt = argv[optind][optofs + 1];
+   offset = str_chr(optstring, optopt);
+@@ -78,6 +160,7 @@ again:
+ 
+   /* if the option char isn't in optstring we return '?' */
+   if(optstring[offset] == '\0') {
++    state->err = SHELL_OPTERR_UNKNOWN;
+     optind++;
+     return '?';
+   }
+@@ -96,6 +179,7 @@ again:
+ 
+     /* missing argument? */
+     if(optarg == 0) {
++      state->err = SHELL_OPTERR_MISSING;
+       optind++;
+       return ':';
+     }
+diff --git a/src/builtin.h b/src/builtin.h
+index 870117d3..05ccaaee 100644
+--- a/src/builtin.h
++++ b/src/builtin.h
+@@ -27,6 +27,7 @@ int builtin_errmsg_nonl(char* argv[], char* s, char* msg);
+ int builtin_errmsg(char* argv[], char* s, char* msg);
+ int builtin_error(char* argv[], char* s);
+ int builtin_invopt(char* argv[]);
++void builtin_usage(const struct builtin_cmd* b, buffer* out);
+ 
+ /* builtin prototypes
+  * ----------------------------------------------------------------------- */
+diff --git a/src/builtin/builtin_error.c b/src/builtin/builtin_error.c
+index e28e3141..e4978de9 100644
+--- a/src/builtin/builtin_error.c
++++ b/src/builtin/builtin_error.c
+@@ -44,10 +44,62 @@ builtin_error(char* argv[], char* s) {
+   return builtin_errmsg(argv, s, strerror(errno));
+ }
+ 
++/* the synopsis line and the help text of a builtin, as "help NAME" prints them */
++void
++builtin_usage(const struct builtin_cmd* b, buffer* out) {
++  buffer_puts(out, b->name);
++  buffer_putspace(out);
++  buffer_puts(out, b->args);
++  buffer_putnlflush(out);
++  buffer_puts(out, b->help ? b->help : "    No further help available.\n");
++  buffer_flush(out);
++}
++
++/* reports what shell_getopt() just returned; the value to return from the builtin:
++ *   --help            help on stdout, 0
++ *   anything else     message and "usage: NAME ARGS" on stderr, 2
++ * ----------------------------------------------------------------------- */
+ int
+ builtin_invopt(char* argv[]) {
++  const struct builtin_cmd* b;
+   char optchars[2];
+-  optchars[0] = '-';
+-  optchars[1] = shell_optopt;
+-  return builtin_errmsgn(argv, optchars, 2, "invalid option");
++  const char* what = optchars;
++  size_t n = 2;
++  char* msg = "invalid option";
++
++  for(b = builtin_table; b->name; b++)
++    if(!str_diff(b->name, argv[0]))
++      break;
++
++  if(shell_opterr == SHELL_OPTERR_HELP) {
++    if(b->name)
++      builtin_usage(b, fd_out->w);
++
++    return 0;
++  }
++
++  if(shell_optlname) {
++    what = shell_optlname;
++    n = str_chr(what, '=');
++  } else {
++    optchars[0] = '-';
++    optchars[1] = shell_optopt;
++  }
++
++  if(shell_opterr == SHELL_OPTERR_MISSING)
++    msg = "option requires an argument";
++  else if(shell_opterr == SHELL_OPTERR_NOARG)
++    msg = "option doesn't take an argument";
++
++  builtin_errmsgn(argv, what, n, msg);
++
++  if(b->name) {
++    buffer_puts(fd_err->w, "usage: ");
++    buffer_puts(fd_err->w, b->name);
++    buffer_putspace(fd_err->w);
++    buffer_puts(fd_err->w, b->args);
++    buffer_putnlflush(fd_err->w);
++  }
++
++  return 2;
+ }

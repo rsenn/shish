@@ -150,7 +150,7 @@ builtin_umask(int argc, char* argv[]) {
     switch(c) {
       case 'p': print = 1; break;
       case 'S': symbolic = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

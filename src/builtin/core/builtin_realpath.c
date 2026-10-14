@@ -19,74 +19,9 @@ const char help_realpath[] = "    Print the resolved absolute pathname.\n"
                              "    -q                     no diagnostics, only the exit status\n"
                              "    -L                     don't resolve symbolic links (same as -s)\n"
                              "    -P                     resolve symbolic links (default)\n"
-                             "    -s                     don't resolve symbolic links (short for --strip)\n"
+                             "    -s, --strip            don't resolve symbolic links\n"
                              "    --relative-to=DIR      print the result relative to DIR\n"
                              "    file                   path to resolve\n";
-
-/* removes 'n' argv slots starting at 'i', shifting the rest (and the
- * NULL terminator) down; 'argc' is adjusted in place.
- * ----------------------------------------------------------------------- */
-static void
-remove_args(char* argv[], int* argc, int i, int n) {
-  byte_copyr(&argv[i], (*argc - i - n) * sizeof(char*), &argv[i + n]);
-  *argc -= n;
-}
-
-/* pulls "--relative-to DIR" or "--relative-to=DIR" out of argv,
- * wherever it appears, returning the DIR operand (or NULL if absent).
- * ----------------------------------------------------------------------- */
-static char*
-extract_relative_to(char* argv[], int* argc) {
-  int i;
-
-  for(i = 1; i < *argc; i++) {
-    if(str_equal(argv[i], "--relative-to")) {
-      char* dir = argv[i + 1];
-
-      if(!dir)
-        return (char*)-1;
-
-      remove_args(argv, argc, i, 2);
-      return dir;
-    }
-
-    if(!str_diffn(argv[i], "--relative-to=", 14)) {
-      char* dir = argv[i] + 14;
-
-      remove_args(argv, argc, i, 1);
-      return dir;
-    }
-  }
-
-  return NULL;
-}
-
-/* computes 'target's path relative to 'base' -- both already
- * absolute and canonicalized (a single PATHSEP_C style throughout).
- * ----------------------------------------------------------------------- */
-static void
-relative_to(stralloc* out, const char* base, const char* target) {
-  size_t i = path_commonlen(base, target);
-
-  out->len = 0;
-
-  for(size_t j = i; base[j]; j++) {
-    size_t n = path_component(base + j);
-
-    stralloc_cats(out, "..");
-    stralloc_catc(out, PATHSEP_C);
-    j += n;
-  }
-
-  if(target[i])
-    stralloc_cats(out, target + i);
-  else if(out->len)
-    out->len--;
-  else
-    stralloc_cats(out, ".");
-
-  stralloc_nul(out);
-}
 
 /* does the resolved path meet mode 'e' (it exists) or 'E' (its directory exists)? */
 static int
@@ -99,14 +34,13 @@ realpath_exists(const char* resolved, int mode) {
   if(mode == 'e')
     return stat(resolved, &st) == 0;
 
-  while(n && resolved[n - 1] != PATHSEP_C)
-    n--;
+  n = path_dirlen(resolved, n);
 
-  if(n <= 1)
+  if(!n)
     return 1;
 
   stralloc_init(&dir);
-  stralloc_copyb(&dir, resolved, n - 1);
+  stralloc_copyb(&dir, resolved, n);
   stralloc_nul(&dir);
   ok = stat(dir.s, &st) == 0;
   stralloc_free(&dir);
@@ -117,22 +51,18 @@ int
 builtin_realpath(int argc, char* argv[]) {
   int c, symbolic = 0, ret = 0, i, mode = 'E', quiet = 0;
   stralloc sa, base, rel;
-  char* relto = extract_relative_to(argv, &argc);
+  char* relto = NULL;
 
-  if(relto == (char*)-1) {
-    builtin_errmsg(argv, "--relative-to", "option requires an argument");
-    return 1;
-  }
-
-  while((c = shell_getopt(argc, argv, "EeLPqs")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "EeLPqs", "relative-to:=R canonicalize-existing=e canonicalize-missing=E logical=L physical=P quiet=q strip=s no-symlinks=s")) > 0) {
     switch(c) {
+      case 'R': relto = shell_optarg; break;
       case 'L':
       case 's': symbolic = 1; break;
       case 'P': symbolic = 0; break;
       case 'E':
       case 'e': mode = c; break;
       case 'q': quiet = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -183,7 +113,7 @@ builtin_realpath(int argc, char* argv[]) {
     }
 
     if(relto) {
-      relative_to(&rel, base.s, sa.s);
+      path_rel_sa(&rel, sa.s, sa.len, base.s, base.len);
       buffer_puts(fd_out->w, rel.s);
     } else {
       buffer_puts(fd_out->w, sa.s);

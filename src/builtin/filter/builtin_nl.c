@@ -105,15 +105,27 @@ nl_option(void* ctx, int ch) {
       return 0;
 
     case 'w':
-      if(nl_number(n, &v, shell_optarg, "invalid line number field width") < 0 || !v)
+      if(nl_number(n, &v, shell_optarg, "invalid line number field width") < 0)
         return -1;
+
+      if(!v) {
+        n->in.err_arg = shell_optarg;
+        n->in.err_msg = "invalid line number field width";
+        return -1;
+      }
 
       n->width = v;
       return 0;
 
     case 'l':
-      if(nl_number(n, &v, shell_optarg, "invalid line number of blank lines") < 0 || !v)
+      if(nl_number(n, &v, shell_optarg, "invalid line number of blank lines") < 0)
         return -1;
+
+      if(!v) {
+        n->in.err_arg = shell_optarg;
+        n->in.err_msg = "invalid line number of blank lines";
+        return -1;
+      }
 
       n->join = v;
       return 0;

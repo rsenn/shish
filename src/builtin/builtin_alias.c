@@ -136,7 +136,7 @@ builtin_alias(int argc, char* argv[]) {
   while((c = shell_getopt(argc, argv, "p")) > 0) {
     switch(c) {
       case 'p': print = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -190,7 +190,7 @@ builtin_unalias(int argc, char* argv[]) {
   while((c = shell_getopt(argc, argv, "a")) > 0) {
     switch(c) {
       case 'a': all = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

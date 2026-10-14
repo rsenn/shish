@@ -115,7 +115,7 @@ assert_equal "s" "$(cat 'sp ace2')" "names with spaces"
 cp '' x 2>/dev/null
 assert_equal "1" "$?" "an empty operand fails"
 cp -Z a b 2>/dev/null
-assert_equal "1" "$?" "an unknown option fails"
+assert_equal "2" "$?" "an unknown option fails"
 cp a 2>/dev/null
 assert_equal "1" "$?" "a missing destination fails"
 

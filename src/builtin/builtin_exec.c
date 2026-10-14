@@ -33,7 +33,7 @@ builtin_exec(int argc, char* argv[]) {
       case 'c': nullenv = 1; break;
       case 'l': dash = 1; break;
       case 'a': argv0 = shell_optarg; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

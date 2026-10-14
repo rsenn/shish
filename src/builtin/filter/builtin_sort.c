@@ -26,7 +26,12 @@ const char help_sort[] = "    Sort, merge or check the lines of files.\n"
                          "                    sort on a part of the line; mods are b d f i n r\n"
                          "    file            file to read; '-' or omitted means stdin\n"
                          "\n"
-                         "    Characters compare as bytes (the C collating sequence).\n";
+                         "    Characters compare as bytes (the C collating sequence).\n"
+                         "\n"
+                         "    long options: --reverse -r, --numeric-sort -n, --unique -u,\n"
+                         "                  --key=ARG -k, --field-separator=ARG -t, --output=ARG -o,\n"
+                         "                  --ignore-case -f, --check -c, --merge -m,\n"
+                         "                  --ignore-leading-blanks -b, --dictionary-order -d\n";
 
 /* a -k key: where it starts and ends, and the modifiers attached to it */
 struct sortkey {
@@ -656,6 +661,7 @@ sort_finish(void* ctx) {
 
 const struct filter_ops sort_ops = {
     .opts = "cmo:bdfinrust:k:",
+    .longopts = "reverse=r numeric-sort=n unique=u key:=k field-separator:=t output:=o ignore-case=f check=c merge=m ignore-leading-blanks=b dictionary-order=d",
     .size = sizeof(struct sort),
     .option = sort_option,
     .setup = sort_setup,

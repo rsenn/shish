@@ -11,6 +11,7 @@
 #include "../exec.h"
 #include "../../lib/alloc.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../var.h"
 #include "../eval.h"
 #include "../../lib/windoze.h"
@@ -106,7 +107,7 @@ builtin_source(int argc, char* argv[]) {
   }
 
   /* If filename contains no slash, search PATH (POSIX requirement) */
-  if(str_chr(fname, '/') >= str_len(fname)) {
+  if(path_isname(fname, str_len(fname))) {
     if((searched_path = source_search_path(fname)))
       path_to_open = searched_path;
     else

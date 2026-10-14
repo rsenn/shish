@@ -27,7 +27,7 @@ assert_equal "1" "$?" "-u and -g together fail"
 id -n >/dev/null 2>&1
 assert_equal "1" "$?" "-n without -u, -g or -G fails"
 id -Z >/dev/null 2>&1
-assert_equal "1" "$?" "an unknown option fails"
+assert_equal "2" "$?" "an unknown option fails"
 id a b >/dev/null 2>&1
 assert_equal "1" "$?" "two operands fail"
 

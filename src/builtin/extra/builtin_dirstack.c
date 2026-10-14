@@ -396,7 +396,7 @@ builtin_dirs(int argc, char* argv[]) {
           case 'l': long_fmt = 1; break;
           case 'p': per_line = 1; break;
           case 'v': verbose = 1; break;
-          default: return builtin_invopt(argv), 2;
+          default: return builtin_invopt(argv);
         }
     } else {
       return builtin_errmsg(argv, a, "invalid argument"), 2;

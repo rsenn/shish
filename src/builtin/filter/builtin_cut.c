@@ -23,7 +23,10 @@ const char help_cut[] = "    Select parts of each line.\n"
                         "    -n              with -b in a UTF-8 locale: never split a character\n"
                         "    file            file to read; '-' or omitted means stdin\n"
                         "\n"
-                        "    list is N, N-M, N- or -M items separated by commas, counted from 1.\n";
+                        "    list is N, N-M, N- or -M items separated by commas, counted from 1.\n"
+                        "\n"
+                        "    long options: --bytes=ARG -b, --characters=ARG -c, --fields=ARG -f,\n"
+                        "                  --delimiter=ARG -d, --only-delimited -s\n";
 
 #define CUT_MAX ((size_t)-1)
 
@@ -342,6 +345,7 @@ cut_finish(void* ctx) {
 
 const struct filter_ops cut_ops = {
     .opts = "b:c:f:d:sn",
+    .longopts = "bytes:=b characters:=c fields:=f delimiter:=d only-delimited=s",
     .size = sizeof(struct cut),
     .option = cut_option,
     .setup = cut_setup,

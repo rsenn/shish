@@ -2,7 +2,7 @@
 
 #if BUILTIN_GREP
 
-#if GREP_USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
 #include <regex.h>
 #else
 #include "../../../text/dfa.h"
@@ -38,10 +38,18 @@ const char help_grep[] = "    Search files for patterns.\n"
                          "    -q              quiet (exit 0 on match, no output)\n"
                          "    -c              print a count of matching lines instead of the lines\n"
                          "    pattern         regular expression pattern\n"
-                         "    file            file to search; '-' or omitted means stdin\n";
+                         "    file            file to search; '-' or omitted means stdin\n"
+                         "\n"
+                         "    long options: --ignore-case -i, --invert-match -v, --count -c,\n"
+                         "                  --line-number -n, --files-with-matches -l,\n"
+                         "                  --files-without-match -L, --quiet -q, --silent -q,\n"
+                         "                  --extended-regexp -E, --fixed-strings -F,\n"
+                         "                  --regexp=ARG -e, --file=ARG -f, --word-regexp -w,\n"
+                         "                  --line-regexp -x, --no-filename -h, --only-matching -o,\n"
+                         "                  --no-messages -s, --max-count=ARG -m\n";
 
 /* one backend behind three names: compile, test one line, free */
-#if GREP_USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
 typedef regex_t grep_re;
 #define RE_FREE(re) regfree(re)
 #else
@@ -142,7 +150,7 @@ grep_find(struct grep* g, const char* line, size_t len, size_t from, size_t* st,
     return 0;
   }
 
-#if GREP_USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
   {
     char* z = alloc(len + 1);
     regmatch_t pm;
@@ -206,7 +214,7 @@ grep_test(struct grep* g, const char* line, size_t len) {
   if(g->fixed)
     return grep_test_fixed(g->fixed_pat, line, len, g->whole, g->icase);
 
-#if GREP_USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
   char* z = alloc(len + 1);
   int m;
 
@@ -578,7 +586,7 @@ grep_setup(void* ctx) {
     pattern = g->whole_pat;
   }
 
-#if GREP_USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
   if(regcomp(&g->re, pattern, (g->extended ? REG_EXTENDED : 0) | (g->icase ? REG_ICASE : 0)) != 0) {
 #else
   if(dfa_compile(&g->re, pattern, str_len(pattern), (g->extended ? DFA_ERE : 0) | (g->icase ? DFA_ICASE : 0)) != DFA_OK) {
@@ -616,6 +624,7 @@ grep_finish(void* ctx) {
 
 const struct filter_ops grep_ops = {
     .opts = "EFe:f:hilLm:osvwxnqc",
+    .longopts = "ignore-case=i invert-match=v count=c line-number=n files-with-matches=l files-without-match=L quiet=q silent=q extended-regexp=E fixed-strings=F regexp:=e file:=f word-regexp=w line-regexp=x no-filename=h only-matching=o no-messages=s max-count:=m",
     .size = sizeof(struct grep),
     .option = grep_option,
     .setup = grep_setup,

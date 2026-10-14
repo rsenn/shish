@@ -6242,7 +6242,7 @@ assert_equal "cdef|ef|bcde|de/b c|a b|c" "$(echo "$PX" | tr '\n' '/' | sed 's|/$
 FD=$(mktemp -d); mkdir "$FD/sub"; : > "$FD/A.txt"; : > "$FD/sub/b.txt"
 PX=$("$SHISH_SELF" -c "find $FD -maxdepth 0; find $FD -name a.txt; find $FD -iname a.TXT -print; find $FD -name nomatch -print; find $FD -maxdepth 1 -name '*.txt'" | sed "s|$FD|D|" | tr '\n' ' ')
 assert_equal "D D/A.txt D/A.txt " "$PX" "find honors -maxdepth/-iname and does not run -print after a false -name"
-PX=$(timeout 5 "$SHISH_SELF" -c "find $FD -size -1" 2>&1 | sed 's|.*find: ||')
+PX=$(timeout 5 "$SHISH_SELF" -c "find $FD -user nobody" 2>&1 | sed 's|.*find: ||')
 have find && assert_match "$PX" "unknown predicate*" "find rejects an unknown primary instead of looping on it"
 rm -rf "$FD"
 
@@ -6658,6 +6658,50 @@ assert_equal ". $VDIR/d.sh; eval 'echo e'
 echo in-dot
 echo e" "$PX" "set -v echoes the lines of a dotted file and an eval string"
 rm -rf "$VDIR"
+
+## fixes/405: "find -type f -maxdepth 2" with no path searches "." (the leading "-type" was parsed as the options -t -y -p -e)
+case $(command -V find 2>&1) in
+  *"built-in"*)
+    FDIR=$(mktemp -d)
+    : >"$FDIR/f"
+    PX=$(cd "$FDIR" && find -type f -maxdepth 2)
+    assert_equal "./f" "$PX" "find with a leading -type and no path searches ."
+    PX=$(cd "$FDIR" && find -type f -exec echo got {} \;)
+    assert_equal "got ./f" "$PX" "find -exec runs a command for each file"
+    rm -rf "$FDIR"
+    ;;
+esac
+
+## fixes/406: builtins take GNU-style long options; --help prints the help (status 0), a bad option exits 2
+case $(command -V ls 2>&1) in
+  *"built-in"*)
+    PX=$(ls --help 2>&1; echo "rc=$?")
+    assert_match "$PX" "*List directory contents*rc=0" "ls --help prints the help and exits 0"
+    ls --no-such-option >/dev/null 2>&1
+    assert_equal 2 "$?" "a bad long option exits 2"
+    ls -Z >/dev/null 2>&1
+    assert_equal 2 "$?" "a bad short option exits 2"
+    PX=$(ls --no-such-option 2>&1)
+    assert_match "$PX" "*--no-such-option: invalid option*usage: ls *" "the message names the option and shows the usage line"
+    ;;
+esac
+case $(command -V touch 2>&1) in
+  *"built-in"*)
+    TDIR=$(mktemp -d)
+    PX=$(TZ=UTC; export TZ; cd "$TDIR" && touch --date='2001-02-03 04:05:06' f && date -r f '+%F %T')
+    assert_equal "2001-02-03 04:05:06" "$PX" "touch --date reads the shell's TZ variable"
+    rm -rf "$TDIR"
+    ;;
+esac
+case $(command -V realpath 2>&1) in
+  *"built-in"*)
+    assert_equal "/tmp" "$(realpath //tmp///)" "realpath collapses a doubled leading separator"
+    RDIR=$(mktemp -d)
+    : >"$RDIR/afile"
+    assert_equal "afile" "$(realpath --relative-to="$RDIR" "$RDIR/./afile")" "realpath --relative-to gives a path with no leading separator"
+    rm -rf "$RDIR"
+    ;;
+esac
 
 ## fixes/401-404 are build/platform fixes with no assertion that can fail on glibc:
 ##   401 builtin_ulimit.c lacked <unistd.h> (implicit geteuid under musl)

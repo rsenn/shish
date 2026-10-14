@@ -18,6 +18,7 @@
  * declarative half (ctx is zeroed, `size` bytes, starting with a struct filter_in):
  *
  *   opts    shell_getopt() string; NULL: no options
+ *   longopts  long option names for opts (and long-only options), see doc/getopt-long.md; NULL: none
  *   size    sizeof(ctx)
  *   option  one parsed option; -1 rejects it (usage error)
  *   setup   after options and operands are known (ctx->in is initialised;
@@ -53,7 +54,11 @@ struct filter_ops {
   const char* (*output)(void* ctx);
   int (*each)(void* ctx, const char* src); /* in.each: whole-operand work (src NULL: no operands); non-0 fails */
   int err_status;                          /* exit status of a usage error (0: 1) */
+  const char* longopts;                    /* shell_getopt_long() table, "name=X name:=X ..."; NULL: none */
 };
+
+/* filter_init() returns this when --help was asked for: nothing to run, filter_run() prints the help */
+#define FILTER_HELP 2
 
 /* one indirection so struct builtin_cmd doesn't have to change shape
  * again if this ever needs more than a single ops pointer. */

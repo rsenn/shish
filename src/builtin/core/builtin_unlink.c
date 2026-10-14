@@ -18,8 +18,7 @@ builtin_unlink(int argc, char* argv[]) {
   int c;
 
   while((c = shell_getopt(argc, argv, "")) > 0) {
-    builtin_invopt(argv);
-    return 1;
+    return builtin_invopt(argv);
   }
 
   if(argc - shell_optind < 1) {

@@ -1,5 +1,6 @@
 #include "../../lib/alloc.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../tree.h"
 #include "../trace.h"
 #include "../eval.h"
@@ -37,7 +38,7 @@ hash_commands_in_node(union node* node) {
         union node* arg = node->ncmd.args;
         if(arg->id == N_ARG && arg->narg.list && arg->narg.list->id == N_ARGSTR) {
           char* name = arg->narg.list->nargstr.s;
-          if(name && name[0] && str_chr(name, '/') == str_len(name)) {
+          if(name && name[0] && path_isname(name, str_len(name))) {
             /* Only hash if it's a simple name (not a path) */
             exec_hash(name, 0);
           }

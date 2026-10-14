@@ -14,9 +14,13 @@ filter_init(const struct filter_ops* ops, void* ctx, int argc, char* argv[], buf
   byte_zero(ctx, ops->size);
 
   if(ops->opts || ops->option)
-    while((ch = shell_getopt(argc, argv, ops->opts ? ops->opts : "")) > 0)
+    while((ch = shell_getopt_long(argc, argv, ops->opts ? ops->opts : "", ops->longopts)) > 0) {
+      if(ch == SHELL_OPT_HELP)
+        return FILTER_HELP;
+
       if(!ops->option || ops->option(ctx, ch) < 0)
         return -1;
+    }
 
   /* an option() error message survives filter_in_init()'s zeroing */
   err_arg = in->err_arg;

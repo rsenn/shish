@@ -86,7 +86,7 @@ tail nosuch >/dev/null 2>&1
 assert_equal "1" "$?" "a missing file fails"
 assert_equal "24|25|" "$(tail -n 2 nosuch n25 2>/dev/null | grep -v '==>' | grep . | tr '\n' '|')" "the other files are still shown"
 tail -Z n25 >/dev/null 2>&1
-assert_equal "1" "$?" "an unknown option fails"
+assert_equal "2" "$?" "an unknown option fails"
 
 cd / && rm -rf "$T"
 summary

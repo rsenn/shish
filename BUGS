@@ -171,16 +171,17 @@
   sh tests/run-tst.sh build/x86_64-linux-gnu/shish tests/posix grouping-p.tst
   ```
 
-- find-missing-primaries: `find` knows `-type f|d|l|b|c|p|s`, `-name`, `-iname`, `-path`, `-print`, `-newer`,
-  `-links`, `-maxdepth`, `-mindepth`, `-true`, `-false`, `!`, `-a`, `-o` and parentheses; POSIX also has `-exec`
-  (`;` and `+`), `-size`, `-mtime`/`-atime`/`-ctime`, `-perm`, `-user`, `-group`, `-nouser`, `-nogroup`,
-  `-prune`, `-depth`, `-xdev` and `-ok`. An unknown primary is an error ("unknown predicate"). `-newer`
-  compares whole seconds only.
+- find-missing-primaries: `find` now knows `-exec` (`;` and `+`, run through the shell's own dispatch so
+  builtins and functions work), `-size`, `-mtime`/`-atime`/`-ctime`, `-mmin`/`-amin`/`-cmin`, `-perm`, `-empty`,
+  `-readable`/`-writable`/`-executable`, `-prune`, `-depth`, `-xdev`/`-mount`, `-delete`, `-print0`, `-quit`
+  and `-not`. Still missing from POSIX: `-user`, `-group`, `-nouser`, `-nogroup` and `-ok`. An unknown
+  primary is an error ("unknown predicate"). `-newer` compares whole seconds only. A command that is not
+  found makes the `-exec ... ;` test false but leaves the exit status 0, as GNU does.
 
   **Repro:**
   ```sh
-  find . -size -1       # find: unknown predicate: -size
-  find . -exec echo {} \;
+  find . -user root     # find: unknown predicate: -user
+  find . -ok rm {} \;
   ```
 
 - wait-interrupted-by-trap-hangs: the `wait` builtin does not get

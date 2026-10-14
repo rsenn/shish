@@ -53,7 +53,7 @@ builtin_cd(int argc, char* argv[]) {
       case 'L': symbolic = 1; break;
       case 'P': symbolic = 0; break;
       case 'e': break; /* only matters when -P cannot determine the new directory */
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -103,22 +103,16 @@ builtin_cd(int argc, char* argv[]) {
     cdpath = var_value("CDPATH", NULL);
 
     do {
-      /* too much, too much :) */
-      if((n = str_chr(cdpath, ':')) + len + 1 > PATH_MAX) {
+      /* cdpath element + arg; an empty element is the current directory */
+      n = str_chr(cdpath, ':');
+
+      if(path_cat(path, sizeof(path), cdpath, n, arg, len) >= sizeof(path)) {
         /* set error code and print the longer string in the error msg */
         errno = ENAMETOOLONG;
         return builtin_errmsgn(argv, (n > len ? cdpath : arg), (n > len ? n : len), strerror(errno));
       }
 
-      /* copy path prefix from cdpath if present */
-      if(n) {
-        byte_copy(path, n, cdpath);
-        cdpath += n;
-        path[n++] = '/';
-      }
-
-      /* copy the argument and canonicalize */
-      str_copy(&path[n], arg);
+      cdpath += n;
 
       /* path_canonicalize() only resolves symlinks (in -P mode); it
          never verifies each component exists and is a directory. So

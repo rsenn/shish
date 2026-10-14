@@ -81,7 +81,7 @@ else
 fi
 
 mv -Z a b 2>/dev/null
-assert_equal "1" "$?" "an unknown option fails"
+assert_equal "2" "$?" "an unknown option fails"
 
 cd / && rm -rf "$T"
 summary

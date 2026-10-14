@@ -15,7 +15,10 @@ const char help_head[] = "    Copy the first part of files to standard output.\n
                          "    -number         same as -n number\n"
                          "    -q              never print the \"==> file <==\" headers\n"
                          "    -v              always print them\n"
-                         "    file            file to read; '-' or omitted means stdin\n";
+                         "    file            file to read; '-' or omitted means stdin\n"
+                         "\n"
+                         "    long options: --lines=ARG -n, --bytes=ARG -c, --quiet -q, --silent -q,\n"
+                         "                  --verbose -v\n";
 
 struct head {
   struct filter_in in;
@@ -182,6 +185,7 @@ head_finish(void* ctx) {
 
 const struct filter_ops head_ops = {
     .opts = "n:c:qv0123456789",
+    .longopts = "lines:=n bytes:=c quiet=q silent=q verbose=v",
     .size = sizeof(struct head),
     .option = head_option,
     .setup = head_setup,

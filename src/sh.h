@@ -136,6 +136,8 @@ int sh_error(const char* s);
 int sh_errorn(const char* s, unsigned int len);
 int sh_error_errno(const char* s);
 int sh_errorn_errno(const char* s, unsigned int len);
+char* sh_tz_enter(const char* tz);
+void sh_tz_leave(char* old);
 void sh_exit(int retcode);
 int sh_child_exit(int status); /* run the EXIT trap a forked child set, then pass status on */
 size_t sh_fmtflags(char* dest, const struct shopt*);

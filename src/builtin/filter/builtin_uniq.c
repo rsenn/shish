@@ -22,7 +22,11 @@ const char help_uniq[] = "    Report or filter out repeated lines.\n"
                          "    -i              ignore case (ASCII letters) when comparing\n"
                          "    -w chars        compare no more than chars characters of each line\n"
                          "    input_file      file to read; '-' or omitted means stdin\n"
-                         "    output_file     file to write instead of standard output\n";
+                         "    output_file     file to write instead of standard output\n"
+                         "\n"
+                         "    long options: --count -c, --repeated -d, --unique -u, --ignore-case -i,\n"
+                         "                  --skip-fields=ARG -f, --skip-chars=ARG -s,\n"
+                         "                  --check-chars=ARG -w\n";
 
 struct uniq {
   struct filter_in in;
@@ -228,6 +232,7 @@ uniq_finish(void* ctx) {
 
 const struct filter_ops uniq_ops = {
     .opts = "cduiw:f:s:",
+    .longopts = "count=c repeated=d unique=u ignore-case=i skip-fields:=f skip-chars:=s check-chars:=w",
     .size = sizeof(struct uniq),
     .option = uniq_option,
     .setup = uniq_setup,

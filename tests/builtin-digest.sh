@@ -73,7 +73,7 @@ md5sum nosuch f1 >/dev/null 2>&1
 assert_equal "1" "$?" "a missing file gives exit status 1"
 
 md5sum -x >/dev/null 2>&1
-assert_equal "1" "$?" "an unknown option gives exit status 1"
+assert_equal "2" "$?" "an unknown option gives exit status 2"
 
 cd /
 rm -rf "$TESTDIR"

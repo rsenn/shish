@@ -8,13 +8,13 @@
 #   LIBARCHIVE_INCLUDE_DIRS  where archive.h is
 #
 # A system libarchive is used when cmake finds one. Otherwise libarchive is
-# built from source (cmake/BuildLibArchive.cmake) and so is every codec
+# built from source (cmake/deps/BuildLibArchive.cmake) and so is every codec
 # (zlib, bzip2, lzma, zstd, lz4, lzo2, libb2) that cmake does not find, so a
 # musl, dietlibc or emscripten build needs nothing installed.
 #
 #   -DLIBARCHIVE_BUNDLED=ON    never look for a system libarchive
 #
-include(cmake/BuildLibArchive.cmake)
+include(cmake/deps/BuildLibArchive.cmake)
 
 # the part that fetches third_party/libarchive and adds it as a subdirectory;
 # kept for tcc, whose build needs the target_compile_options below

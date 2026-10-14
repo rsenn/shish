@@ -7,9 +7,14 @@ str_chrns(const char* in, const char needles[], size_t nn) {
   const char* t = in;
 
   while(*t) {
-    for(size_t i = 0; i < nn; i++)
-      if(*t != needles[i])
-        return (size_t)(t - in);
+    size_t i;
+
+    for(i = 0; i < nn; i++)
+      if(*t == needles[i])
+        break;
+
+    if(i == nn)
+      break;
 
     ++t;
   }

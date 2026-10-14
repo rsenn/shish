@@ -135,10 +135,11 @@ file(GLOB LIBTEXT_SOURCES text/*.h text/*/*.c)
 # the engines come back through the builtins that need them (src/builtin/builtins.map)
 list(REMOVE_ITEM LIBTEXT_SOURCES ${BUILTIN_MANAGED})
  
-# grep's backend: text/dfa (in-tree, no libc regex dependency) by default, or the system's <regex.h> if this is turned on.
-option(GREP_USE_SYSTEM_REGEX "Use the system's regex.h for grep instead of text/dfa" OFF)
-if(GREP_USE_SYSTEM_REGEX)
-  set_source_files_properties(src/builtin/extra/builtin_grep.c PROPERTIES COMPILE_DEFINITIONS GREP_USE_SYSTEM_REGEX=1)
+# regular-expression backend of grep, find -regex and expr: text/dfa (in-tree, no libc regex dependency) by default,
+# or the system's <regex.h> if this is turned on.
+option(USE_SYSTEM_REGEX "Use the system's regex.h for grep, find and expr instead of text/dfa" OFF)
+if(USE_SYSTEM_REGEX)
+  add_compile_definitions(USE_SYSTEM_REGEX=1)
 endif()
  
 # ------------------------------------------------------------------------------

@@ -24,17 +24,19 @@
 const char help_hostname[] = "    Print or set the system hostname.\n"
                              "\n"
                              "    -f              force a re-get/set even if unchanged\n"
-                             "    name            new hostname to set\n";
+                             "    name            new hostname to set\n"
+                             "\n"
+                             "    long options: --fqdn -f\n";
 
 int
 builtin_hostname(int argc, char* argv[]) {
   int c, force = 0;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "f")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "f", "fqdn=f")) > 0) {
     switch(c) {
       case 'f': force = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

@@ -21,7 +21,10 @@ const char help_wc[] = "    Print newline, word, and byte counts.\n"
                        "    -l, --lines            print the newline counts\n"
                        "    -L, --max-line-length  print the maximum display width\n"
                        "    -w, --words            print the word counts\n"
-                       "    file                   file to count; '-' or omitted means stdin\n";
+                       "    file                   file to count; '-' or omitted means stdin\n"
+                       "\n"
+                       "    long options: --bytes -c, --chars -m, --lines -l, --max-line-length -L,\n"
+                       "                  --words -w\n";
 
 struct wc_counts {
   unsigned long lines, words, chars, bytes, maxlen;
@@ -149,14 +152,14 @@ builtin_wc(int argc, char* argv[]) {
   struct wc_counts total;
   int utf8 = sh_utf8();
 
-  while((c = shell_getopt(argc, argv, "cmlLw")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "cmlLw", "bytes=c chars=m lines=l max-line-length=L words=w")) > 0) {
     switch(c) {
       case 'c': opt_c = 1; break;
       case 'm': opt_m = 1; break;
       case 'l': opt_l = 1; break;
       case 'L': opt_L = 1; break;
       case 'w': opt_w = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

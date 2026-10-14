@@ -69,7 +69,9 @@ const char help_mkdir[] = "    Create directories.\n"
                           "    -m mode         set the new directory's mode (octal, or symbolic\n"
                           "                    relative to a=rwx), not affected by umask\n"
                           "    -v              print each directory created\n"
-                          "    directory       directory (or directories) to create\n";
+                          "    directory       directory (or directories) to create\n"
+                          "\n"
+                          "    long options: --parents -p, --mode=ARG -m, --verbose -v\n";
 
 int
 builtin_mkdir(int argc, char* argv[]) {
@@ -80,13 +82,13 @@ builtin_mkdir(int argc, char* argv[]) {
   char* d;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "pvm:")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "pvm:", "parents=p mode:=m verbose=v")) > 0) {
     switch(c) {
       case 'p': components = 1; break;
       case 'v': verbose = 1; break;
       case 'm': modespec = shell_optarg; break;
 
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

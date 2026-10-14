@@ -66,7 +66,7 @@ builtin_jobs(int argc, char* argv[]) {
     switch(c) {
       case 'l': long_fmt = 1; break;
       case 'p': pgid_only = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

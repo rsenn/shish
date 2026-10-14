@@ -4,6 +4,7 @@
 #include "../sh.h"
 #include "../tree.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../../lib/alloc.h"
 #include "../vartab.h"
 #include "../var.h"
@@ -60,7 +61,7 @@ exec_hash(char* name, int mask) {
   }
 
   /* name contains slashes, its a path */
-  if(name[str_chr(name, '/')]) {
+  if(!path_isname(name, str_len(name))) {
     /* do not hash this... */
     how = "path";
     cmd.id = H_PROGRAM;

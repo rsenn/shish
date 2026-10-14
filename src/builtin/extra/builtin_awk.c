@@ -181,7 +181,7 @@ builtin_awk(int argc, char* argv[]) {
         have_prog = 1;
         break;
 
-      default: builtin_invopt(argv); return 2;
+      default: return builtin_invopt(argv);
     }
   }
 

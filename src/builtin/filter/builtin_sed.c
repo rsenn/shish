@@ -19,7 +19,10 @@ const char help_sed[] = "    Stream editor: apply a script of editing commands t
                         "    -e script       add script (may be given more than once)\n"
                         "    -f file         add the script read from file\n"
                         "    -E, -r          use Extended Regular Expressions (ERE)\n"
-                        "    file            file(s) to edit; '-' or omitted means stdin\n";
+                        "    file            file(s) to edit; '-' or omitted means stdin\n"
+                        "\n"
+                        "    long options: --quiet -n, --silent -n, --expression=ARG -e,\n"
+                        "                  --file=ARG -f, --regexp-extended -E, --regexp-extended -r\n";
 
 /* w/s///w files: opened/truncated once up front, closed once at the
  * end (POSIX: "each wfile shall be created before processing
@@ -258,6 +261,7 @@ sed_finish(void* arg) {
 
 const struct filter_ops sed_ops = {
     .opts = "nEre:f:",
+    .longopts = "quiet=n silent=n expression:=e file:=f regexp-extended=E regexp-extended=r",
     .size = sizeof(struct sed_ctx),
     .option = sed_option,
     .setup = sed_setup,

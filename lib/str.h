@@ -43,7 +43,7 @@ char* str_ndup(const char* s, size_t n);
 /* str_copy copies leading bytes from in to out until \0.
  * returns number of copied bytes. */
 size_t str_copy(char* out, const char* in);
-size_t str_copyn(void* p1, const void* p2, size_t max);
+size_t str_copyn(char* out, const char* in, size_t max);
 
 /* str_diff returns negative, 0, or positive, depending on whether the
  * string a[0], a[1], ..., a[n] == '\0' is lexicographically smaller than,

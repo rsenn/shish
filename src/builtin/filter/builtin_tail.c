@@ -20,7 +20,10 @@ const char help_tail[] = "    Copy the last part of files to standard output.\n"
                          "    -f              keep reading a file as it grows (one file operand)\n"
                          "    -q              never print the \"==> file <==\" headers\n"
                          "    -v              always print them\n"
-                         "    file            file to read; '-' or omitted means stdin\n";
+                         "    file            file to read; '-' or omitted means stdin\n"
+                         "\n"
+                         "    long options: --lines=ARG -n, --bytes=ARG -c, --quiet -q, --silent -q,\n"
+                         "                  --verbose -v, --follow -f\n";
 
 struct tail {
   struct filter_in in;
@@ -345,6 +348,7 @@ tail_finish(void* ctx) {
 
 const struct filter_ops tail_ops = {
     .opts = "n:c:fqv0123456789",
+    .longopts = "lines:=n bytes:=c quiet=q silent=q verbose=v follow=f",
     .size = sizeof(struct tail),
     .option = tail_option,
     .setup = tail_setup,

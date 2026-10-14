@@ -28,6 +28,6 @@ assert_equal "1" "$?" "setting the clock is not supported"
 date +%Y extra >/dev/null 2>&1
 assert_equal "1" "$?" "an extra operand fails"
 date -Z >/dev/null 2>&1
-assert_equal "1" "$?" "an unknown option fails"
+assert_equal "2" "$?" "an unknown option fails"
 
 summary

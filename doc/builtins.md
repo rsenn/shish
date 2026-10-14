@@ -71,6 +71,14 @@ out is linked in.
 With autotools, the same choice is
 `./configure --enable-builtins="cat mkdir rm"`.
 
+## Options
+
+Every builtin that parses options accepts `--help` (help text on stdout, status 0), and exits with status 2 after printing
+`name: -Z: invalid option` and a `usage:` line for a bad one. Most also take GNU-style long options (`sort --reverse`,
+`grep --ignore-case`, `date --date=@0 --iso-8601=seconds`, `ls --color[=yes|no|auto]`); the help text of each lists them.
+Long options are exact (no abbreviations), `--name=value` and `--name value` both work, and options are not permuted
+after the first operand. `set` and `sh` keep their own `--` handling. Design: `doc/getopt-long.md`.
+
 ## Compression codecs
 
 `compress` and `uncompress` sit on libarchive: a system copy when cmake finds
@@ -101,10 +109,10 @@ the same way on a static/musl/dietlibc/WASM build as anywhere else. `sed`
 additionally needs `s///`'s substitution machinery (`dfa_replace()`),
 which has no `<regex.h>` equivalent, so it has no backend switch at all.
 
-`grep` can go either way:
+`grep`, `find -regex` and `expr` can go either way:
 
 ```sh
-cfg -DGREP_USE_SYSTEM_REGEX=ON   # link the system's <regex.h> instead
+cfg -DUSE_SYSTEM_REGEX=ON   # link the system's <regex.h> instead
 ```
 
 Off (the default) is what makes `grep` work on a target with no libc

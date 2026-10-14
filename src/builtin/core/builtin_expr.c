@@ -14,10 +14,8 @@
 #include "../../trace.h"
 #include "../../fdtable.h"
 
-/* Define to use system <regex.h> instead of lib/bre.h */
-/* #define USE_SYSTEM_REGEX */
-
-#ifdef USE_SYSTEM_REGEX
+/* USE_SYSTEM_REGEX (cmake option) selects the system <regex.h> instead of text/dfa */
+#if USE_SYSTEM_REGEX
 #include <regex.h>
 #else
 #include "../../../text/dfa.h"
@@ -32,7 +30,7 @@ static int
 expr_match(const char* str, const char* pat, stralloc* out) {
   stralloc_init(out);
 
-#ifdef USE_SYSTEM_REGEX
+#if USE_SYSTEM_REGEX
   regex_t re;
   regmatch_t pmatch[10];
 

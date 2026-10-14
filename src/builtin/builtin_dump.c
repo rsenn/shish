@@ -74,7 +74,7 @@ builtin_dump(int argc, char* argv[]) {
       case 'F': what = FUNCTIONS; break;
       case 'j': what = JOBS; break;
       case 'u': scan_int(shell_optarg, &fd); break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

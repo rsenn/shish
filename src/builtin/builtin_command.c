@@ -12,6 +12,7 @@
 #include "../../lib/str.h"
 #include "../../lib/alloc.h"
 #include "../../lib/stralloc.h"
+#include "../../lib/path.h"
 #include "../var.h"
 
 /* Helper function to check if a name is a shell keyword */
@@ -48,9 +49,9 @@ command_abspath(const char* path, stralloc* out) {
   out->len = 0;
 
   if(path[0] != '/' && sh->cwd.len) {
-    stralloc_catb(out, sh->cwd.s, sh->cwd.len);
-    stralloc_catc(out, '/');
-    stralloc_cats(out, path[0] == '.' && path[1] == '/' ? path + 2 : path);
+    const char* rel = path[0] == '.' && path[1] == '/' ? path + 2 : path;
+
+    path_cat_sa(out, sh->cwd.s, sh->cwd.len, rel, str_len(rel));
   } else {
     stralloc_cats(out, path);
   }
@@ -87,7 +88,7 @@ command_describe(char* name, int verbose, int stdpath) {
       case H_SBUILTIN: kind = "a special built-in"; break;
       case H_BUILTIN: {
         /* a regular built-in is described by the program it shadows */
-        char* p = str_chr(name, '/') == str_len(name) ? exec_path(name) : 0;
+        char* p = path_isname(name, str_len(name)) ? exec_path(name) : 0;
 
         if(p) {
           command_abspath(p, &abs);
@@ -138,7 +139,7 @@ builtin_command(int argc, char* argv[]) {
       case 'p': default_path = 1; break;
       case 'v': print_desc = 1; break;
       case 'V': print_verbose = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

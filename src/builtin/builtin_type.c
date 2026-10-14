@@ -29,7 +29,7 @@ builtin_type(int argc, char* argv[]) {
       case 'P': force_path = 1; break;
       case 'p': print_path = 1; break;
       case 't': type_name = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

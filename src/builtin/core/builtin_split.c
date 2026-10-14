@@ -25,7 +25,9 @@ const char help_split[] = "    Split a file into pieces.\n"
                           "    -b n[k|m]       bytes per piece instead (k: *1024, m: *1048576)\n"
                           "    -a length       letters in the suffix (default 2)\n"
                           "    file            file to split; '-' or omitted means stdin\n"
-                          "    name            prefix of the pieces (default x): xaa, xab, ...\n";
+                          "    name            prefix of the pieces (default x): xaa, xab, ...\n"
+                          "\n"
+                          "    long options: --lines=ARG -l, --bytes=ARG -b, --suffix-length=ARG -a\n";
 
 /* "N", "Nk" or "Nm"; 0 on a bad size */
 static unsigned long
@@ -81,7 +83,7 @@ builtin_split(int argc, char* argv[]) {
   size_t plen, base;
   ssize_t n;
 
-  while((c = shell_getopt(argc, argv, "l:b:a:")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "l:b:a:", "lines:=l bytes:=b suffix-length:=a")) > 0) {
     switch(c) {
       case 'l':
       case 'b':
@@ -100,7 +102,7 @@ builtin_split(int argc, char* argv[]) {
         }
 
         break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

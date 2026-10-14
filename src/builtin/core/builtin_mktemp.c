@@ -8,6 +8,7 @@
 #include "../../var.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/str.h"
+#include "../../../lib/path.h"
 #include "../../../lib/uint32.h"
 #include "../../../lib/open.h"
 #include <unistd.h>
@@ -24,7 +25,9 @@ const char help_mktemp[] = "    Create a uniquely-named temporary file or direct
                            "    -t              generate under a temporary base directory\n"
                            "    -p dir          use dir as the temporary base directory\n"
                            "    -u              only print the name; don't create anything\n"
-                           "    template        name template; a run of X's is randomized\n";
+                           "    template        name template; a run of X's is randomized\n"
+                           "\n"
+                           "    long options: --directory -d, --quiet -q, --dry-run -u\n";
 
 int
 builtin_mktemp(int argc, char* argv[]) {
@@ -39,7 +42,7 @@ builtin_mktemp(int argc, char* argv[]) {
   };
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "dqtp:u")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "dqtp:u", "directory=d quiet=q dry-run=u")) > 0) {
     switch(c) {
       case 'd': directory = 1; break;
       case 'q': quiet = 1; break;
@@ -50,7 +53,7 @@ builtin_mktemp(int argc, char* argv[]) {
         base = shell_optarg;
         break;
 
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -74,9 +77,10 @@ builtin_mktemp(int argc, char* argv[]) {
   if(argv[shell_optind]) {
     stralloc_cats(&name, argv[shell_optind]);
   } else {
-    size_t len = str_rchr(sh_argv0, '/');
+    size_t len;
+    const char* b = path_basename(sh_argv0, str_len(sh_argv0), &len);
 
-    stralloc_cats(&name, sh_argv0[len] ? &sh_argv0[len + 1] : sh_argv0);
+    stralloc_catb(&name, b, len);
     stralloc_cats(&name, "-XXXXXXXX");
   }
 

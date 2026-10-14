@@ -51,6 +51,10 @@ void byte_fill(void* out, size_t len, int c);
    copied, including the character c. */
 size_t byte_ccopy(void* out, size_t len, const void* in, char c);
 
+/* byte_findb returns the index of the first occurrence of what[0..wlen) in
+ * haystack[0..hlen), or hlen if not found. */
+size_t byte_findb(const void* haystack, size_t hlen, const void* what, size_t wlen);
+
 /* in case we're linking dynamically, implement functions inline
    by means of libc string.h functions */
 #else
@@ -82,7 +86,7 @@ size_t byte_rchr(const void* haystack, size_t len, char needle);
 
 
 #ifdef HAVE_MEMMEM
-size_t
+static inline size_t
 byte_findb(const void* haystack, size_t hlen, const void* what, size_t wlen) {
   const char* b;
 
@@ -125,7 +129,7 @@ size_t byte_chrn(const void* haystack, size_t len, char value);
 size_t byte_rchrn(const void* haystack, size_t len, char needle);
 
 /* convenience shortcut to test for equality */
-#define byte_equal(a, len, b) !byte_diff((a), (len), (b))
+#define byte_equal(a, len, b) (!byte_diff((a), (len), (b)))
 
 /* read only trim-right */
 size_t byte_trimr(char* x, size_t n, const char* trimchars, unsigned int trimcharslen);

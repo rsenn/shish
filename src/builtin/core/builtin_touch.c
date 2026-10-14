@@ -3,6 +3,8 @@
 #if BUILTIN_TOUCH
 
 #include "../../builtin.h"
+#include "../../sh.h"
+#include "../../../lib/date.h"
 #include "../../fdtable.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/scan.h"
@@ -28,46 +30,6 @@ const char help_touch[] = "    Change file access and modification times, creati
                           "    --time=WORD            with -d/-t/-r: WORD 'access'/'atime'/'use'\n"
                           "                           means -a, 'modify'/'mtime' means -m\n"
                           "    file                   file(s) to touch\n";
-
-/* removes 'n' argv slots starting at 'i', shifting the rest down;
- * 'argc' is adjusted in place.
- * ----------------------------------------------------------------------- */
-static void
-remove_args(char* argv[], int* argc, int i, int n) {
-  byte_copyr(&argv[i], (*argc - i - n) * sizeof(char*), &argv[i + n]);
-  *argc -= n;
-}
-
-/* pulls "NAME VALUE" or "NAME=VALUE" out of argv, wherever it
- * appears, returning VALUE, NULL if absent, or (char*)-1 if NAME was
- * given without a value.
- * ----------------------------------------------------------------------- */
-static char*
-extract_longopt(char* argv[], int* argc, const char* name) {
-  size_t namelen = str_len(name);
-  int i;
-
-  for(i = 1; i < *argc; i++) {
-    if(str_equal(argv[i], name)) {
-      char* val = argv[i + 1];
-
-      if(!val)
-        return (char*)-1;
-
-      remove_args(argv, argc, i, 2);
-      return val;
-    }
-
-    if(!str_diffn(argv[i], name, namelen) && argv[i][namelen] == '=') {
-      char* val = argv[i] + namelen + 1;
-
-      remove_args(argv, argc, i, 1);
-      return val;
-    }
-  }
-
-  return NULL;
-}
 
 /* parses touch -t's "[[CC]YY]MMDDhhmm[.ss]" into 'tm' (local time).
  * Returns 0 on success, -1 if 's' isn't a valid stamp.
@@ -129,87 +91,6 @@ touch_parse_stamp(const char* s, struct tm* tm) {
   return 0;
 }
 
-/* parses touch --date's "@EPOCH", "YYYY-MM-DD", or
- * "YYYY-MM-DD[T ]hh:mm[:ss]" into an absolute time_t. This is not a
- * general natural-language date parser -- just these fixed forms.
- * Returns 0 on success, -1 if 's' isn't a recognized date.
- * ----------------------------------------------------------------------- */
-static int
-touch_parse_date(const char* s, time_t* out) {
-  struct tm tm;
-  unsigned long y, mo, d, h = 0, mi = 0, se = 0;
-  size_t n;
-
-  if(s[0] == '@') {
-    unsigned long v;
-
-    n = scan_ulong(s + 1, &v);
-
-    if(!n || s[1 + n] != '\0')
-      return -1;
-
-    *out = (time_t)v;
-    return 0;
-  }
-
-  n = scan_ulong(s, &y);
-
-  if(n != 4 || s[n] != '-')
-    return -1;
-  s += n + 1;
-
-  n = scan_ulong(s, &mo);
-
-  if(n != 2 || s[n] != '-')
-    return -1;
-  s += n + 1;
-
-  n = scan_ulong(s, &d);
-
-  if(n != 2)
-    return -1;
-  s += n;
-
-  if(*s == 'T' || *s == ' ') {
-    s++;
-    n = scan_ulong(s, &h);
-
-    if(n != 2 || s[n] != ':')
-      return -1;
-    s += n + 1;
-
-    n = scan_ulong(s, &mi);
-
-    if(n != 2)
-      return -1;
-    s += n;
-
-    if(*s == ':') {
-      s++;
-      n = scan_ulong(s, &se);
-
-      if(n != 2)
-        return -1;
-      s += n;
-    }
-  }
-
-  if(*s != '\0')
-    return -1;
-
-  byte_zero(&tm, sizeof(tm));
-  tm.tm_year = (int)y - 1900;
-  tm.tm_mon = (int)mo - 1;
-  tm.tm_mday = (int)d;
-  tm.tm_hour = (int)h;
-  tm.tm_min = (int)mi;
-  tm.tm_sec = (int)se;
-  tm.tm_isdst = -1;
-
-  *out = mktime(&tm);
-  return *out == (time_t)-1 ? -1 : 0;
-}
-
 int
 builtin_touch(int argc, char* argv[]) {
   int c, opt_a = 0, opt_m = 0, ret = 0, i, both, nocreate = 0;
@@ -218,16 +99,9 @@ builtin_touch(int argc, char* argv[]) {
   int have_requested = 0;
   struct stat rst;
 
-  date_arg = extract_longopt(argv, &argc, "--date");
-  ref_arg = extract_longopt(argv, &argc, "--reference");
-  time_arg = extract_longopt(argv, &argc, "--time");
+  date_arg = ref_arg = time_arg = NULL;
 
-  if(date_arg == (char*)-1 || ref_arg == (char*)-1 || time_arg == (char*)-1) {
-    builtin_errmsg(argv, "option requires an argument", NULL);
-    return 1;
-  }
-
-  while((c = shell_getopt(argc, argv, "acmfd:r:t:")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "acmfd:r:t:", "date:=d reference:=r time:=T no-create=c")) > 0) {
     switch(c) {
       case 'a': opt_a = 1; break;
       case 'c': nocreate = 1; break;
@@ -236,7 +110,8 @@ builtin_touch(int argc, char* argv[]) {
       case 'd': date_arg = shell_optarg; break;
       case 'r': ref_arg = shell_optarg; break;
       case 't': stamp_arg = shell_optarg; break;
-      default: builtin_invopt(argv); return 1;
+      case 'T': time_arg = shell_optarg; break;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -257,7 +132,12 @@ builtin_touch(int argc, char* argv[]) {
   }
 
   if(date_arg) {
-    if(touch_parse_date(date_arg, &requested) == -1) {
+    char* oldtz = sh_tz_enter(0);
+    int bad = date_parse(date_arg, time(NULL), &requested) == -1;
+
+    sh_tz_leave(oldtz);
+
+    if(bad) {
       builtin_errmsg(argv, date_arg, "invalid date");
       return 1;
     }
@@ -265,8 +145,12 @@ builtin_touch(int argc, char* argv[]) {
     have_requested = 1;
   } else if(stamp_arg) {
     struct tm tm;
+    char* oldtz = sh_tz_enter(0);
+    int bad = touch_parse_stamp(stamp_arg, &tm) == -1 || (requested = mktime(&tm)) == (time_t)-1;
 
-    if(touch_parse_stamp(stamp_arg, &tm) == -1 || (requested = mktime(&tm)) == (time_t)-1) {
+    sh_tz_leave(oldtz);
+
+    if(bad) {
       builtin_errmsg(argv, stamp_arg, "invalid date format");
       return 1;
     }

@@ -28,7 +28,7 @@ builtin_readonly(int argc, char* argv[]) {
   while((c = shell_getopt(argc, argv, "p")) > 0) {
     switch(c) {
       case 'p': print = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

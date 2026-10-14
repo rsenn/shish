@@ -40,7 +40,7 @@ builtin_fdtable(int argc, char* argv[]) {
     switch(c) {
 
       case 'u': scan_int(shell_optarg, &fd); break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

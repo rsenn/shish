@@ -13,7 +13,7 @@
 
 /* -p: having just removed 'sa', keep climbing to its parent, its
  * parent's parent, and so on, rmdir()'ing each as long as they're
- * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_dirlenb()
+ * empty (GNU rmdir -p's "a/b/c" -> "a/b" -> "a" walk). path_dirlen()
  * gives the length of the parent; 0 (none left) or a parent that is the
  * root ("/a" -> "/") stops the climb before rmdir("")/rmdir("/"). Returns 0 if
  * the climb ran out of ancestors on its own, 1 on a failed rmdir().
@@ -22,7 +22,7 @@ static int
 rmdir_parents(char* argv[], stralloc* sa, int verbose, int force) {
   size_t len;
 
-  while((len = path_lensa(path_dirlenb, sa)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
+  while((len = path_lensa(path_dirlen, sa)) > 0 && len < sa->len && (len > 1 || !path_is_absolute(sa->s, 1))) {
     sa->len = len;
     stralloc_nul(sa);
 
@@ -50,7 +50,9 @@ const char help_rmdir[] = "    Remove empty directories.\n"
                           "    -p              also remove now-empty ancestor directories\n"
                           "    -f              ignore errors, keep going\n"
                           "    -v              print each directory removed\n"
-                          "    directory       empty directory (or directories) to remove\n";
+                          "    directory       empty directory (or directories) to remove\n"
+                          "\n"
+                          "    long options: --parents -p, --verbose -v, --ignore-fail-on-non-empty -f\n";
 
 int
 builtin_rmdir(int argc, char* argv[]) {
@@ -58,12 +60,12 @@ builtin_rmdir(int argc, char* argv[]) {
   char* p;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "vfrp")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "vfrp", "parents=p verbose=v ignore-fail-on-non-empty=f")) > 0) {
     switch(c) {
       case 'v': verbose = 1; break;
       case 'f': force = 1; break;
       case 'p': parents = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

@@ -16,13 +16,15 @@ const char help_basename[] = "    Strip directory components from a path.\n"
                              "    -s suffix       strip this suffix from every path; implies -a\n"
                              "    path            print PATH's last component (after the final '/')\n"
                              "    suffix          also strip this suffix, unless it's the whole of\n"
-                             "                    the resulting name (e.g. \"a.txt\" \".txt\" -> \"a\")\n";
+                             "                    the resulting name (e.g. \"a.txt\" \".txt\" -> \"a\")\n"
+                             "\n"
+                             "    long options: --multiple -a, --suffix=ARG -s\n";
 
 /* strips the directory part of one path and, unless it is the whole name, the suffix */
 static void
 basename_put(const char* path, const char* suffix) {
   size_t blen;
-  const char* base = path_basename(path, &blen);
+  const char* base = path_basename(path, str_len(path), &blen);
 
   if(suffix && *suffix) {
     size_t slen = str_len(suffix);
@@ -40,11 +42,11 @@ builtin_basename(int argc, char* argv[]) {
   const char* suffix = NULL;
   int c, multiple = 0;
 
-  while((c = shell_getopt(argc, argv, "as:")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "as:", "multiple=a suffix:=s")) > 0) {
     switch(c) {
       case 'a': multiple = 1; break;
       case 's': multiple = 1; suffix = shell_optarg; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

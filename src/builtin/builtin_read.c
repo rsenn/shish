@@ -179,7 +179,7 @@ builtin_read(int argc, char* argv[]) {
       case 'r': raw = 1; break;
       case 's': silent = 1; break;
       case 'u': scan_int(shell_optarg, &fd); break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

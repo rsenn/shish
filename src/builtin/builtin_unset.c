@@ -47,7 +47,7 @@ builtin_unset(int argc, char* argv[]) {
     switch(c) {
       case 'f': fun = 1; break;
       case 'v': var = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

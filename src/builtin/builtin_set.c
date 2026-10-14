@@ -226,8 +226,7 @@ builtin_set(int argc, char* argv[]) {
     }
 
     if(!set_apply(&opts, c, on)) {
-      builtin_invopt(argv);
-      return 1;
+      return builtin_invopt(argv);
     }
   }
 

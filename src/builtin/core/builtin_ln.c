@@ -27,7 +27,10 @@ const char help_ln[] = "    Create links between files.\n"
                        "    -f              remove an existing destination first\n"
                        "    -v              print each link created\n"
                        "    source          existing file to link to\n"
-                       "    dest            link name, or directory to create it in\n";
+                       "    dest            link name, or directory to create it in\n"
+                       "\n"
+                       "    long options: --symbolic -s, --force -f, --verbose -v, --logical -L,\n"
+                       "                  --physical -P\n";
 
 int
 builtin_ln(int argc, char* argv[]) {
@@ -38,14 +41,14 @@ builtin_ln(int argc, char* argv[]) {
   size_t len;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "fLPsv")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "fLPsv", "symbolic=s force=f verbose=v logical=L physical=P")) > 0) {
     switch(c) {
       case 'L': follow = 1; break;
       case 'P': follow = 0; break;
       case 's': symbolic = 1; break;
       case 'f': force = 1; break;
       case 'v': verbose = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

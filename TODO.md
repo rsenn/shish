@@ -203,7 +203,7 @@ documented in `doc/optional-subsystems.md` ("What was done"); it is no longer li
 files that already had guards excepted). With every switch off each file compiles to an empty object.
 Shared files with per-name guards inside: `dirs`/`popd`/`pushd`, `cp`/`mv`, `break`/`continue`,
 `test`/`[` (`[` is `macro=LBRACKET` in the map). `-Wundef` for `src/builtin/` is not enabled: it
-gives 166 warnings from `LINK_STATIC`, `WINDOWS_NATIVE` and `GREP_USE_SYSTEM_REGEX` in `lib/` and
+gives 166 warnings from `LINK_STATIC`, `WINDOWS_NATIVE` and `USE_SYSTEM_REGEX` in `lib/` and
 none from `BUILTIN_*`; `tests/builtin-map.sh` checks every `BUILTIN_<NAME>` under `src/` against
 the map instead. The matrix is not a CTest case; run `sh tests/builtin-matrix.sh [name ...]` after
 touching a builtin, and `WITHOUT="test" sh tests/builtin-matrix.sh '['` for a tier m sibling on its own.
@@ -2469,3 +2469,10 @@ in this section.
   an `hashmap_entry` embedded in the caller's struct (intrusive, no `void*` value). The first three also help `awk`.
   Open questions: does the shell link `awk` often enough to count the size as free; is a 32-slot chain really worse
   than open addressing at under 30 entries (probably not).
+
+## 28. Long options and `--help` for the builtins (done)
+
+`shell_getopt_long` gives every builtin GNU-style long options (a string table per builtin, no abbreviations, no permutation),
+`--help` everywhere, exit status 2 for a bad option, `date -d/-r/-I/-R`, `ls --color`. Design, tables and tests are in
+`doc/getopt-long.md`. Left over, each only together with its feature: `ls --sort=`, `cp/mv -t/-T`,
+`realpath --relative-base`, `mktemp --suffix/--tmpdir`.

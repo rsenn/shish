@@ -29,7 +29,7 @@ builtin_export(int argc, char* argv[]) {
     switch(c) {
       case 'n': clear = 1; break;
       case 'p': print = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

@@ -44,12 +44,7 @@ builtin_help(int argc, char* argv[]) {
     if(!b)
       return builtin_errmsg(argv, argv[1], "no help topic matches");
 
-    output_synopsis(b);
-    buffer_putnlflush(fd_out->w);
-
-    buffer_puts(fd_out->w, b->help ? b->help : "    No further help available.\n");
-    buffer_flush(fd_out->w);
-
+    builtin_usage(b, fd_out->w);
     return 0;
   }
 

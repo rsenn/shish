@@ -19,7 +19,11 @@ const char help_cat[] = "    Concatenate files to standard output.\n"
                         "    -v              show control characters as ^X and M-x (not tab or newline)\n"
                         "    -A -e -t        -vET, -vE, -vT\n"
                         "    -u              unbuffered output (accepted; output is not delayed)\n"
-                        "    file            file to print; '-' or omitted means stdin\n";
+                        "    file            file to print; '-' or omitted means stdin\n"
+                        "\n"
+                        "    long options: --number -n, --number-nonblank -b, --squeeze-blank -s,\n"
+                        "                  --show-ends -E, --show-tabs -T, --show-nonprinting -v,\n"
+                        "                  --show-all -A\n";
 
 /* one cat run, shared by the builtin and the filter;
  * each step reads one "\r\n"-terminated unit and formats it */
@@ -136,6 +140,7 @@ cat_setup(void* ctx) {
 
 const struct filter_ops cat_ops = {
     .opts = "nbsETvAetu",
+    .longopts = "number=n number-nonblank=b squeeze-blank=s show-ends=E show-tabs=T show-nonprinting=v show-all=A",
     .size = sizeof(struct cat),
     .option = cat_option,
     .setup = cat_setup,

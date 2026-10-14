@@ -15,7 +15,9 @@
 const char help_which[] = "    Locate a command on $PATH.\n"
                           "\n"
                           "    -a              print every match on $PATH, not just the first\n"
-                          "    name            command name to search for\n";
+                          "    name            command name to search for\n"
+                          "\n"
+                          "    long options: --all -a\n";
 
 int
 builtin_which(int argc, char* argv[]) {
@@ -26,10 +28,10 @@ builtin_which(int argc, char* argv[]) {
   size_t i, len, n;
 
   /* check options */
-  while((c = shell_getopt(argc, argv, "a")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "a", "all=a")) > 0) {
     switch(c) {
       case 'a': all = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

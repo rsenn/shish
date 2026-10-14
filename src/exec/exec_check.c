@@ -1,6 +1,7 @@
 #include "../exec.h"
 #include "../sh.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../../lib/windoze.h"
 
 #if WINDOWS_NATIVE
@@ -22,7 +23,7 @@ exec_check(char* path) {
 
   /* when there is no directory delimiter in the
      supplied path then search for the file */
-  if(!path[str_chr(path, '/')])
+  if(path_isname(path, str_len(path)))
     ret = exec_path(path);
 
   /* otherwise check immediately for access. access(X_OK) alone would

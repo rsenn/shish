@@ -27,7 +27,9 @@ const char help_compress[] = "    Compress or decompress files; the format follo
                              "    -f              force overwrite of output file and compress links\n"
                              "    -k              keep (don't delete) input files\n"
                              "    -1..-9          compression level (1 = fastest, 9 = best)\n"
-                             "    file            file to process; '-' or omitted means stdin\n";
+                             "    file            file to process; '-' or omitted means stdin\n"
+                             "\n"
+                             "    long options: --stdout -c, --decompress -d, --force -f, --keep -k\n";
 
 /* compressed bytes produced by libarchive, waiting to be pulled */
 struct raw_buf {
@@ -444,6 +446,7 @@ compress_each(void* ctx, const char* src) {
 
 const struct filter_ops compress_ops = {
     .opts = "cdfhk123456789",
+    .longopts = "stdout=c decompress=d force=f keep=k",
     .size = sizeof(struct compress_ctx),
     .option = compress_option,
     .setup = compress_setup,

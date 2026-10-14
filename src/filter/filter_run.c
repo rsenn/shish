@@ -16,18 +16,24 @@ filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
   if(!ctx)
     return 1;
 
-  if((r = filter_init(ops, ctx, argc, argv, fd_in->r)) < 0) {
+  if((r = filter_init(ops, ctx, argc, argv, fd_in->r)) == FILTER_HELP) {
+    filter_close(ops, ctx);
+    return builtin_invopt(argv);
+  }
+
+  if(r < 0) {
     struct filter_in* in = ctx;
+    int usage = 0;
 
     if(in->err_msg && in->err_arg && *in->err_arg)
       builtin_errmsg(argv, (char*)in->err_arg, (char*)in->err_msg);
     else if(in->err_msg)
       builtin_errmsg(argv, (char*)in->err_msg, NULL);
     else
-      builtin_invopt(argv);
+      usage = builtin_invopt(argv);
 
     filter_close(ops, ctx);
-    return ops->err_status ? ops->err_status : 1;
+    return usage ? usage : ops->err_status ? ops->err_status : 1;
   }
 
   if(ops->output && (name = ops->output(ctx))) {

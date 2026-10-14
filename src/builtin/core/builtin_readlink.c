@@ -23,7 +23,10 @@ const char help_readlink[] = "    Print the value of a symbolic link, or canonic
                              "    -e              like -f, but every component must exist\n"
                              "    -m              like -f, with no existence requirement\n"
                              "    file            symbolic link(s) to read, or path(s) to\n"
-                             "                    canonicalize when -f/-e/-m is given\n";
+                             "                    canonicalize when -f/-e/-m is given\n"
+                             "\n"
+                             "    long options: --canonicalize -f, --canonicalize-existing -e,\n"
+                             "                  --canonicalize-missing -m, --no-newline -n\n";
 
 /* canonicalizes 'path' (following every symlink, like realpath -P)
  * and applies the existence rule for 'mode' ('e': every component
@@ -45,22 +48,19 @@ readlink_canonicalize(char* argv[], const char* path, int mode, int newline) {
     return builtin_error(argv, (char*)path);
 
   if(mode == 'f') {
-    size_t n = sa.len;
+    size_t n = path_dirlen(sa.s, sa.len);
 
-    while(n && sa.s[n - 1] != PATHSEP_C)
-      n--;
+    if(n) {
+      char save = sa.s[n];
 
-    if(n > 1) {
-      char save = sa.s[n - 1];
-
-      sa.s[n - 1] = '\0';
+      sa.s[n] = '\0';
 
       if(stat(sa.s, &st) == -1) {
-        sa.s[n - 1] = save;
+        sa.s[n] = save;
         return builtin_error(argv, (char*)path);
       }
 
-      sa.s[n - 1] = save;
+      sa.s[n] = save;
     }
   }
 
@@ -73,13 +73,13 @@ int
 builtin_readlink(int argc, char* argv[]) {
   int c, mode = 0, ret = 0, i, newline = 1;
 
-  while((c = shell_getopt(argc, argv, "femn")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "femn", "canonicalize=f canonicalize-existing=e canonicalize-missing=m no-newline=n")) > 0) {
     switch(c) {
       case 'f':
       case 'e':
       case 'm': mode = c; break;
       case 'n': newline = 0; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

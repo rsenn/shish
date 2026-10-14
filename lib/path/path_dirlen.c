@@ -10,7 +10,7 @@
  *   ""      -> 0
  * ----------------------------------------------------------------------- */
 size_t
-path_dirlenb(const char* s, size_t n) {
+path_dirlen(const char* s, size_t n) {
   if(n == 0)
     return 0;
 

@@ -109,7 +109,7 @@ main(int argc, char** argv, char** envp) {
 
   /* set initial $0 */
   sh_argv0 = argv[0];
-  sh_name = path_basename(sh_argv0, NULL);
+  sh_name = path_basename_s(sh_argv0);
 
   shell_init(buffer_2, sh_name);
 
@@ -174,7 +174,7 @@ main(int argc, char** argv, char** envp) {
     fd_setbuf(fd_src, &fd_src[1], FD_BUFSIZE);
 
   /* set our basename for the \v prompt escape seq and maybe other stuff*/
-  sh_name = path_basename(sh_argv0, NULL);
+  sh_name = path_basename_s(sh_argv0);
 
   if(*sh_name == '-')
     sh_name++;

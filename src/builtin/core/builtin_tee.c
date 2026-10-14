@@ -14,7 +14,9 @@ const char help_tee[] = "    Copy standard input to standard output and to each 
                         "\n"
                         "    -a              append to FILEs instead of overwriting them\n"
                         "    -i              ignore the SIGINT signal while copying\n"
-                        "    file            file(s) to also write standard input to\n";
+                        "    file            file(s) to also write standard input to\n"
+                        "\n"
+                        "    long options: --append -a, --ignore-interrupts -i\n";
 
 /* writes all of buf[0..len) to fd, looping over short writes.
  * Returns 0 on success, -1 on a real write(2) failure.
@@ -42,11 +44,11 @@ builtin_tee(int argc, char* argv[]) {
   int n;
   void (*old_int)(int) = NULL;
 
-  while((c = shell_getopt(argc, argv, "ai")) > 0) {
+  while((c = shell_getopt_long(argc, argv, "ai", "append=a ignore-interrupts=i")) > 0) {
     switch(c) {
       case 'a': append = 1; break;
       case 'i': ignore_int = 1; break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 

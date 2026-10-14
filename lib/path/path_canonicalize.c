@@ -5,11 +5,8 @@
 #define _DEFAULT_SOURCE 1
 #endif
 
-#include "../byte.h"
-#include "../str.h"
 #include "../windoze.h"
 #include "../path_internal.h"
-#include "../unix.h"
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -84,10 +81,17 @@ path_canonicalize(const char* path, stralloc* sa, int symbolic) {
   sa->len = 0;
 
 restart:
-  if((root = path_rootlenb(rest.s, rest.len))) {
+  if((root = path_rootlen(rest.s, rest.len))) {
     if(!stralloc_catb(sa, rest.s, root))
       goto fail;
 
+#if !WINDOWS
+    /* "//tmp" -> "/tmp": only Windows has a UNC root */
+    if(root > 1) {
+      root = 1;
+      sa->len = 1;
+    }
+#endif
     sa->s[root - 1] = PATHSEP_C;
     pos = root;
   }

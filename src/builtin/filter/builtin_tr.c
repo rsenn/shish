@@ -20,7 +20,9 @@ const char help_tr[] = "    Translate, squeeze or delete characters (UTF-8 when 
                        "    -d              delete characters in string1\n"
                        "    -s              squeeze runs of a repeated character in the last string to one\n"
                        "    string1         a list: a-z ranges, [:class:], [=c=], [c*n], \\n \\ooo escapes\n"
-                       "    string2         what string1 translates to (its last character is repeated)\n";
+                       "    string2         what string1 translates to (its last character is repeated)\n"
+                       "\n"
+                       "    long options: --delete -d, --squeeze-repeats -s, --complement -c\n";
 
 /* a growable list of code points */
 struct cpv {
@@ -538,6 +540,7 @@ tr_finish(void* ctx) {
 
 const struct filter_ops tr_ops = {
     .opts = "cCds",
+    .longopts = "delete=d squeeze-repeats=s complement=c",
     .size = sizeof(struct tr),
     .option = tr_option,
     .setup = tr_setup,

@@ -4,6 +4,7 @@
 #include "../../sh.h"
 #include "../../../lib/shell.h"
 #include "../../../lib/stralloc.h"
+#include "../../../lib/path.h"
 #include "../../../lib/alloc.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/str.h"
@@ -61,7 +62,11 @@ const char help_cp[] = "    Copy files.\n"
                        "    -a              -R -P -p\n"
                        "    -v              print each file copied\n"
                        "    source          file (or, with -R, directory) to copy\n"
-                       "    target          file, or directory to copy into\n";
+                       "    target          file, or directory to copy into\n"
+                       "\n"
+                       "    long options: --recursive -R, --force -f, --interactive -i,\n"
+                       "                  --preserve -p, --no-clobber -n, --verbose -v,\n"
+                       "                  --archive -a, --dereference -L, --no-dereference -P\n";
 
 #endif
 
@@ -73,7 +78,10 @@ const char help_mv[] = "    Move or rename files.\n"
                        "    -n              never overwrite an existing file\n"
                        "    -v              print each file moved\n"
                        "    source          file or directory to move\n"
-                       "    target          new name, or directory to move into\n";
+                       "    target          new name, or directory to move into\n"
+                       "\n"
+                       "    long options: --force -f, --interactive -i, --no-clobber -n,\n"
+                       "                  --verbose -v\n";
 #endif
 
 /* "name" part of a path without its trailing slashes: "a/b//" -> "b"
@@ -573,7 +581,7 @@ mv_one(struct cpmv* o, const char* src, const char* dst) {
 int
 builtin_cpmv(int argc, char* argv[]) {
   struct cpmv o;
-  const char* optstr;
+  const char *optstr, *longopts;
   struct stat tst;
   char *target, *src;
   int c, nsrc, is_dir, ret = 0;
@@ -585,13 +593,13 @@ builtin_cpmv(int argc, char* argv[]) {
 
 #if BUILTIN_CP
   if(!str_diff(argv[0], "cp"))
-    optstr = "RrHLPfipnva";
+    optstr = "RrHLPfipnva", longopts = "recursive=R force=f interactive=i preserve=p no-clobber=n verbose=v archive=a dereference=L no-dereference=P";
   else
 #endif
 #if BUILTIN_MV
       if(!str_diff(argv[0], "mv")) {
     o.mv = 1;
-    optstr = "finv";
+    optstr = "finv", longopts = "force=f interactive=i no-clobber=n verbose=v";
   } else
 #endif
   {
@@ -599,7 +607,7 @@ builtin_cpmv(int argc, char* argv[]) {
     return 1;
   }
 
-  while((c = shell_getopt(argc, argv, optstr)) > 0) {
+  while((c = shell_getopt_long(argc, argv, optstr, longopts)) > 0) {
     switch(c) {
       case 'R':
       case 'r': o.recurse = 1; break;
@@ -616,7 +624,7 @@ builtin_cpmv(int argc, char* argv[]) {
         o.follow = 0;
         o.preserve = 1;
         break;
-      default: builtin_invopt(argv); return 1;
+      default: return builtin_invopt(argv);
     }
   }
 
@@ -649,12 +657,7 @@ builtin_cpmv(int argc, char* argv[]) {
 
     if(is_dir) {
       base = cpmv_base(src, &blen);
-      stralloc_copys(&dst, target);
-
-      if(dst.len && dst.s[dst.len - 1] != '/')
-        stralloc_catc(&dst, '/');
-
-      stralloc_catb(&dst, base, blen);
+      path_cat_sa(&dst, target, str_len(target), base, blen);
     } else {
       stralloc_copys(&dst, target);
     }

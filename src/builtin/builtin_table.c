@@ -265,10 +265,10 @@ struct builtin_cmd builtin_table[] = {
     {"awk", &builtin_awk, B_DEFAULT, "[-F sep] [-v assign]... [-f progfile | 'program'] [file...]", help_awk},
 #endif
 #if BUILTIN_BASENAME
-    {"basename", &builtin_basename, B_DEFAULT, "path [suffix]", help_basename},
+    {"basename", &builtin_basename, B_DEFAULT, "[-a] [-s suffix] path [suffix]", help_basename},
 #endif
 #if BUILTIN_ID
-    {"id", &builtin_id, B_DEFAULT, "[-Ggu] [-nr] [user]", help_id},
+    {"id", &builtin_id, B_DEFAULT, "[-ugG] [-nr] [user]", help_id},
 #endif
 #if BUILTIN_JOBS
     {"bg", &builtin_bg, B_DEFAULT, "[job...]", help_bg},
@@ -277,13 +277,13 @@ struct builtin_cmd builtin_table[] = {
     {"break", &builtin_break, B_SPECIAL, "[n]", help_break},
 #endif
 #if BUILTIN_CAT
-    {"cat", &builtin_cat, B_DEFAULT, "[-nb] [FILE]...", help_cat, &cat_filter},
+    {"cat", &builtin_cat, B_DEFAULT, "[-nbsETvA] [file...]", help_cat, &cat_filter},
 #endif
 #if BUILTIN_CD
     {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]", help_cd},
 #endif
 #if BUILTIN_CHMOD
-    {"chmod", &builtin_chmod, B_DEFAULT, "[-v] [FILE]...", help_chmod},
+    {"chmod", &builtin_chmod, B_DEFAULT, "[-Rvcf] mode file...", help_chmod},
 #endif
 #if BUILTIN_COMMAND
     {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]", help_command},
@@ -295,7 +295,7 @@ struct builtin_cmd builtin_table[] = {
     {"cp", &builtin_cpmv, B_DEFAULT, "[-RrHLPfipnva] source... target", help_cp},
 #endif
 #if BUILTIN_DATE
-    {"date", &builtin_date, B_DEFAULT, "[-u] [+format]", help_date},
+    {"date", &builtin_date, B_DEFAULT, "[-u] [-d STRING | -r FILE] [-I[FMT] | -R | +format]", help_date},
 #endif
 #if BUILTIN_DIRNAME
     {"dirname", &builtin_dirname, B_DEFAULT, "path", help_dirname},
@@ -360,7 +360,7 @@ struct builtin_cmd builtin_table[] = {
     {"history", &builtin_history, B_DEFAULT, "[-c]", help_history},
 #endif
 #if BUILTIN_HOSTNAME
-    {"hostname", &builtin_hostname, B_DEFAULT, "[name]", help_hostname},
+    {"hostname", &builtin_hostname, B_DEFAULT, "[-f] [name]", help_hostname},
 #endif
 #if BUILTIN_JOBS
     {"jobs", &builtin_jobs, B_DEFAULT, "[-lnprs] [job...]", help_jobs},
@@ -375,13 +375,13 @@ struct builtin_cmd builtin_table[] = {
     {"link", &builtin_link, B_DEFAULT, "file1 file2", help_link},
 #endif
 #if BUILTIN_LN
-    {"ln", &builtin_ln, B_DEFAULT, "[-sfv]", help_ln},
+    {"ln", &builtin_ln, B_DEFAULT, "[-sfvLP] source... target", help_ln},
 #endif
 #if BUILTIN_LOCAL
     {"local", &builtin_local, B_DEFAULT, "[option] name[=value] ...", help_local},
 #endif
 #if BUILTIN_LS
-    {"ls", &builtin_ls, B_DEFAULT, "[-adl1] [file...]", help_ls},
+    {"ls", &builtin_ls, B_DEFAULT, "[-AaCcdFfgHiklLmnopqRrSstux1] [--color[=WHEN]] [file...]", help_ls},
 #endif
 #if BUILTIN_DIGEST
     {"md5sum", &builtin_digest, B_DEFAULT, "[file...]", help_digest},
@@ -399,10 +399,10 @@ struct builtin_cmd builtin_table[] = {
     {"mv", &builtin_cpmv, B_DEFAULT, "[-finv] source... target", help_mv},
 #endif
 #if BUILTIN_MKDIR
-    {"mkdir", &builtin_mkdir, B_DEFAULT, "[-p]", help_mkdir},
+    {"mkdir", &builtin_mkdir, B_DEFAULT, "[-pv] [-m mode] directory...", help_mkdir},
 #endif
 #if BUILTIN_MKTEMP
-    {"mktemp", &builtin_mktemp, B_DEFAULT, "[-dt] [-p DIR] [TEMPLATE]", help_mktemp},
+    {"mktemp", &builtin_mktemp, B_DEFAULT, "[-dqtu] [-p DIR] [TEMPLATE]", help_mktemp},
 #endif
 #if BUILTIN_PRINTF
     {"printf", &builtin_printf, B_DEFAULT, "format [args ...]", help_printf},
@@ -437,22 +437,22 @@ struct builtin_cmd builtin_table[] = {
      help_read},
 #endif
 #if BUILTIN_READLINK
-    {"readlink", &builtin_readlink, B_DEFAULT, "file...", help_readlink},
+    {"readlink", &builtin_readlink, B_DEFAULT, "[-femn] file...", help_readlink},
 #endif
 #if BUILTIN_READONLY
     {"readonly", &builtin_readonly, B_SPECIAL, "[-p] [name[=value] ...]", help_readonly},
 #endif
 #if BUILTIN_REALPATH
-    {"realpath", &builtin_realpath, B_DEFAULT, "[-s] file...", help_realpath},
+    {"realpath", &builtin_realpath, B_DEFAULT, "[-EeLPqs] [--relative-to=DIR] file...", help_realpath},
 #endif
 #if BUILTIN_RETURN
     {"return", &builtin_return, B_SPECIAL, "[n]", help_return},
 #endif
 #if BUILTIN_RM
-    {"rm", &builtin_rm, B_DEFAULT, "[-vrf] [file]...", help_rm},
+    {"rm", &builtin_rm, B_DEFAULT, "[-vrRfid] file...", help_rm},
 #endif
 #if BUILTIN_RMDIR
-    {"rmdir", &builtin_rmdir, B_DEFAULT, "[-p] [directory]...", help_rmdir},
+    {"rmdir", &builtin_rmdir, B_DEFAULT, "[-pv] directory...", help_rmdir},
 #endif
 #if BUILTIN_SED
     {"sed", &builtin_sed, B_DEFAULT, "[-n] [-E|-r] {script | -e script | -f file}... [file]...", help_sed, &sed_filter},

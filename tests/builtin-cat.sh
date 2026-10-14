@@ -43,7 +43,7 @@ cat "$T/nosuch" 2>/dev/null
 assert_equal 1 "$?" "an unreadable operand makes the status 1"
 
 cat -Z 2>/dev/null
-assert_equal 1 "$?" "a bad option is an error"
+assert_equal 2 "$?" "a bad option is an error"
 
 assert_equal "    1 a
     2 b" "$(echo a | cat -n; echo b | cat -n | sed 's/1/2/')" "cat feeds the filter chain"

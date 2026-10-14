@@ -21,7 +21,9 @@ const char help_uncompress[] = "    Uncompress and concatenate files to standard
                                "    original, -f overwrites.\n"
                                "\n"
                                "    -f              copy input that is not compressed unchanged\n"
-                               "    file            compressed file to read; '-' or omitted means stdin\n";
+                               "    file            compressed file to read; '-' or omitted means stdin\n"
+                               "\n"
+                               "    long options: --force -f\n";
 
 /* libarchive runs the lzop program to read .lzo data and waits for it
  * itself; the shell's SIGCHLD handler would reap it first and
@@ -156,6 +158,7 @@ uncompress_finish(void* ctx) {
 
 const struct filter_ops uncompress_ops = {
     .opts = "f",
+    .longopts = "force=f",
     .size = sizeof(struct uncompress_ctx),
     .option = uncompress_option,
     .setup = uncompress_setup,

@@ -55,7 +55,7 @@
 #define path_comlen(x, n) scan_noncharsetnskip((x), PATHSEP_CHARS, (n))
 #define path_rcomlen(x, n) scan_noncharsetnrskip((x), PATHSEP_CHARS, (n))
 
-#define path_component(s) str_chrs((s), PATHSEP_CHARS, PATHSEP_LENGTH);
+#define path_component(s) str_chrs((s), PATHSEP_CHARS, PATHSEP_LENGTH)
 
 #define path_len(fn, buf, len) fn((buf) , (len))
 #define path_plen(fn, buf, len, root) fn((buf) + (root), (len) - (root))

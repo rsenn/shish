@@ -7,7 +7,7 @@
 #include "../str.h"
 
 static const char default_prefixes[] = {'-', 0};
-struct optstate shell_opt = {default_prefixes, 0, 0, 0, 0, 0};
+struct optstate shell_opt = {default_prefixes, 0, 0, 0, 0, 0, 0, 0};
 
 static void
 state_clear(struct optstate* st) {
@@ -20,8 +20,17 @@ state_clear(struct optstate* st) {
 
 int
 shell_getopt(int argc, char* const argv[], const char* optstring) {
+  return shell_getopt_long_r(&shell_opt, argc, argv, optstring, 0);
+}
 
-  return shell_getopt_r(&shell_opt, argc, argv, optstring);
+int
+shell_getopt_long(int argc, char* const argv[], const char* optstring, const char* longopts) {
+  return shell_getopt_long_r(&shell_opt, argc, argv, optstring, longopts);
+}
+
+int
+shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
+  return shell_getopt_long_r(state, argc, argv, optstring, 0);
 }
 
 #define optind state->ind
@@ -31,8 +40,74 @@ shell_getopt(int argc, char* const argv[], const char* optstring) {
 #define prefix state->prefix
 #define prefixchars state->prefixes
 
+/* "--name", "--name=value" or "--name value" at argv[optind]; longopts is "name=X name:=X name?=X ..."
+ *
+ *   name=X   flag, returns X              name:=X  required argument     name?=X  optional argument (--name=value only)
+ *
+ * --help is known to every caller; a longopts word "help" overrides it.
+ * ----------------------------------------------------------------------- */
+static int
+getopt_long(struct optstate* state, char* const argv[], const char* longopts) {
+  const char* name = argv[optind] + 2;
+  size_t nl = str_chr(name, '=');
+  const char* w = longopts;
+
+  state->lname = argv[optind];
+
+  while(w && *w) {
+    size_t l = str_chr(w, ' ');
+    size_t n = 0;
+
+    while(n < l && w[n] != '=' && w[n] != ':' && w[n] != '?')
+      n++;
+
+    if(n == nl && !str_diffn(w, name, nl)) {
+      char mode = w[n] == '=' ? 0 : w[n];
+      int code = (unsigned char)w[n + (mode ? 2 : 1)];
+      int hasval = name[nl] == '=';
+
+      optopt = code;
+      optarg = 0;
+
+      if(mode == 0 && hasval) {
+        state->err = SHELL_OPTERR_NOARG;
+        optind++;
+        return '?';
+      }
+
+      if(mode && hasval) {
+        optarg = (char*)name + nl + 1;
+      } else if(mode == ':') {
+        if(!(optarg = argv[optind + 1])) {
+          state->err = SHELL_OPTERR_MISSING;
+          optind++;
+          return ':';
+        }
+
+        optind++;
+      }
+
+      optind++;
+      return code;
+    }
+
+    w += l;
+    w += *w == ' ';
+  }
+
+  optind++;
+
+  if(nl == 4 && !str_diffn(name, "help", 4) && !name[4]) {
+    state->err = SHELL_OPTERR_HELP;
+    return SHELL_OPT_HELP;
+  }
+
+  state->err = SHELL_OPTERR_UNKNOWN;
+  return '?';
+}
+
 int
-shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char* optstring) {
+shell_getopt_long_r(struct optstate* state, int argc, char* const argv[], const char* optstring, const char* longopts) {
   unsigned int offset;
 
   if(optind == 0) {
@@ -47,6 +122,9 @@ shell_getopt_r(struct optstate* state, int argc, char* const argv[], const char*
 
     optind++;
   }
+
+  state->err = 0;
+  state->lname = 0;
 
 again:
   /* are we finished? */
@@ -65,6 +143,10 @@ again:
     return -1;
   }
 
+  /* a long option; "+" callers (set, sh) keep their own meaning of "--name" */
+  if(prefixchars == default_prefixes && optofs == 0 && argv[optind][1] == '-')
+    return getopt_long(state, argv, longopts);
+
   /* get next option char */
   optopt = argv[optind][optofs + 1];
   offset = str_chr(optstring, optopt);
@@ -78,6 +160,7 @@ again:
 
   /* if the option char isn't in optstring we return '?' */
   if(optstring[offset] == '\0') {
+    state->err = SHELL_OPTERR_UNKNOWN;
     optind++;
     return '?';
   }
@@ -96,6 +179,7 @@ again:
 
     /* missing argument? */
     if(optarg == 0) {
+      state->err = SHELL_OPTERR_MISSING;
       optind++;
       return ':';
     }

@@ -2,6 +2,7 @@
 #include "../exec.h"
 #include "../../lib/shell.h"
 #include "../../lib/str.h"
+#include "../../lib/path.h"
 #include "../var.h"
 #include "../../lib/windoze.h"
 #include <errno.h>
@@ -30,7 +31,7 @@ char*
 exec_path(char* name) {
   const char* vpath;
   static char path[PATH_MAX];
-  unsigned long si = 0, pi = 0;
+  unsigned long si = 0;
   vpath = var_value("PATH", NULL);
 
   exec_lasterrno = ENOENT;
@@ -44,20 +45,11 @@ exec_path(char* name) {
 
     ni = str_chr(&vpath[si], ':');
 
-    if(ni >= PATH_MAX) {
+    /* "dir" + "/" + name; an empty element is the current directory */
+    if(ni >= PATH_MAX || path_cat(path, sizeof(path), &vpath[si], ni, name, str_len(name)) >= sizeof(path)) {
       si += ni;
       continue;
     }
-
-    /* copying path to temp buffer */
-    pi = str_copyn(path, &vpath[si], ni);
-
-    if(pi && pi < PATH_MAX - 1)
-      if(path[pi - 1] != '/')
-        path[pi++] = '/';
-
-    /* append command name */
-    str_copyn(&path[pi], name, PATH_MAX - pi - 1);
 
     /* check if file accessible and executable. access(X_OK) alone
        isn't enough -- directories are "executable" (searchable) too,

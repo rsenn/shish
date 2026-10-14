@@ -201,7 +201,7 @@ assert_equal "3" "$?" "xargs reports a nonzero status from any invocation"
 
 ## invalid option
 printf 'a\n' | xargs -Z echo 2>/dev/null
-assert_equal "1" "$?" "xargs with an invalid option exits 1"
+assert_equal "2" "$?" "xargs with an invalid option exits 2"
 
 ## large input: many invocations and growing argument lists
 i=0
