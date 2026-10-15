@@ -10,7 +10,7 @@ size_t
 path_common(const char* a, size_t an, const char* b, size_t bn, size_t* blen) {
   size_t ra = path_rootlen(a, an), rb = path_rootlen(b, bn), ia, ib, ea, eb, ca, cb;
 
-  if(ra != rb || byte_diff(a, ra, b)) {
+  if(!SAMEROOT(a, ra, b, rb)) {
     if(blen)
       *blen = 0;
     return 0;

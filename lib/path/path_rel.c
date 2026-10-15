@@ -12,7 +12,7 @@ path_rel(char* out, size_t cap, const char* p, size_t pn, const char* base, size
   size_t ca, cb, up = 0, i, len;
   const char* rest;
 
-  if(path_rootlen(p, pn) != path_rootlen(base, bn) || byte_diff(p, path_rootlen(p, pn), base))
+  if(!SAMEROOT(p, path_rootlen(p, pn), base, path_rootlen(base, bn)))
     return (size_t)-1;
 
   ca = path_common(p, pn, base, bn, &cb);

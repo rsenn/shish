@@ -842,15 +842,40 @@ and `realpath` against GNU `realpath` on a tree with relative, chained and `..`-
 except the `-m` option, which the builtin does not have). Same 42 job-control scripts fail in the old build directory as
 before the phase (see the verification note above).
 
-### Phase 6: other projects consume the same library (decision 7, not started)
+### Phase 6: other projects consume the same library (decision 7)
 
-* **c-utils**: its `lib/path_internal.h` has different macros (`path_issep`, `PATHSEP_S_MIXED`, NUL forms) and
-  49 `lib/path/*.c`. Work list: vendor the shish files (identical `path_cat/canon/common/rel/abs/extoff`
-  already), drop the `_b/_s/_sa` families and filesystem predicates (section 8.1/8.2), migrate the clients of
-  section 3.2. The macros of `internal.h` make the vendored files compile unchanged.
-* **qjs-modules**: `src/path-core.c` carries its own scanner copies and `byte_copy`/`byte_diff` shims; once
-  `internal.h` is stable it can be generated from the same files (`PATH_NO_LIBOWFAT` shim block in the header),
-  then `quickjs-path.c` moves over function by function (5.10), `test-path.js` as the net.
+**c-utils: DONE 2026-10-14 (vendored copy of `shish/lib/path/`, uncommitted).** `lib/path/` now holds the shish files
+unchanged (`internal.h`, `abs`, `abs_sa`, `basename`, `canon`, `canonicalize`, `cat`, `cat_sa`, `common`, `dirlen`,
+`extoff`, `fnmatch`, `getcwd`, `gethome`, `isabs`, `isname`, `isrel`, `listlen`, `listnext`, `next`, `parentlen`,
+`readlink`, `rel`, `rel_sa`, `resolve`, `rootlen`, `search`) plus a c-utils layer that is not part of the shared
+library: `canon_sa`, `dirname`, `dirname_s`, `dirname_sa`, `join`, `lookup`, `find`, `exists`, `access`,
+`is_directory` (the last four wait for decision 3, the `fs_*` module). `scan_charsetnrskip` and
+`scan_noncharsetnrskip` were added to c-utils' `lib/scan/`. Deleted: `path_internal.h`, `getsep`, `is_root`,
+`quote_spaces[_s]`, `relative[_s]`, `rootlen_s`, `skip`, `skips`, `skip_component`, `skip_separator`, `trim`, `len`,
+`len_s`, `num`, `num_sa`, `is_separator`, `realpath`, `split` and their man pages. Clients migrated: `path_is_absolute_s/_sa`
+(10 files) to `path_isabs`, `path_realpath`/`path_canonicalize` (`pathtool`, `pipeinfo`) to `path_resolve`,
+`path_relative` (`genmakefile/input.c`) to a local `getcwd` + `path_rel_sa`, `path_skip` to `path_next`,
+`path_split` (`genmakefile`, `is.h`) to `path_search` / removal (`genmakefile.c`'s `system_path` was never read),
+`path_is_dotslash` (`cpptest`) to `path_next`. `PATHSEP_S_MIXED` and `path_format` are public in c-utils' `path.h`
+(programs split on them).
+
+Two library fixes came out of it, made in shish and copied: `path_common` and `path_rel` compared roots by length, so
+`/usr/x` against `//usr/x` had no common prefix (D3); with `SAMEROOT` (internal.h) both roots count as the same root off
+Windows, like `canon`.
+
+Verification (clean worktree of c-utils HEAD, then the changed tree; the real tree does not build because of the
+untracked `lib/stralloc/readclose_append.c`): everything builds; `all_tests` 488 passed, the same 7 `fmt`/`io` failures as
+before (the 11 tests of deleted functions are gone, `path_isabs`, `path_next`/`path_parentlen` and `path_resolve` tests
+added); `genmakefile` output identical on 6 invocations (one segfaults before and after); `pathtool` identical on 11
+cases with valid symlinks. Differences: `pathtool -f .` printed an empty string (now `.`), and a dangling relative link
+was followed to a wrong target (now stays a link). `pathtool -a` and `-f` follow symlinks as before: the old
+`path_canonicalize(…, symbolic)` used the flag only to choose `stat` or `lstat` and followed links either way, so the
+`!dereference` that `pathtool` passed never kept a link. Flipping `-a` to lexical is a one-word change in `pathtool.c`.
+
+**qjs-modules: not started.** Decided by the author: one file, `lib/path.c`, with the contents of `internal.h` at the
+top after the `#include` statements (so the macros and the shim for `byte_copy`/`byte_diff` live in the file itself).
+Waits for the worktree to settle; the function bodies are the shish files, and the `PATH_NO_LIBOWFAT` block described in
+5.10 becomes the top of that file.
 
 ### Verification of phases 1-4 (2026-10-14)
 

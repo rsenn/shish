@@ -289,6 +289,18 @@ main(void) {
     CHECK_EQUAL(bl, 12);
   }
 
+  /* "//" and "/" are the same root off Windows (see canon) */
+  {
+    size_t bl, al = path_common(B("/usr/local/bin"), B("//usr//local//share"), &bl);
+    char buf[16];
+    size_t n;
+
+    CHECK_EQUAL(al, 10);
+    CHECK_EQUAL(bl, 12);
+    n = path_rel(buf, sizeof buf, B("/a/b"), B("//a"));
+    CHECK(n == 1 && !byte_diff(buf, 2, "b"));
+  }
+
   /* TEST: path_listlen / path_listnext / PATH_LIST_FOREACH  */
   {
     const char* l = "a;bc::d:";

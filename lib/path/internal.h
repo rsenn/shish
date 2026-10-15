@@ -9,6 +9,8 @@
  *   ISDOT / ISDOTDOT        the whole view is "." / ".."
  *   ISDOTSEP / ISDOTDOTSEP  "." / ".." followed by a separator or the end
  *   ISABS / ISREL           the root contains a separator ("/x", "//x", "C:/x") / does not
+ *   SAMEROOT(a, ra, b, rb)  the roots a[0..ra), b[0..rb) are the same root (off Windows: both or neither;
+ *                           "//" is "/")
  *   SEPLEN / COMLEN         run of separators / of non-separators at p
  *   RSEPLEN / RCOMLEN       the same, ending at p + n
  * ----------------------------------------------------------------------- */
@@ -35,6 +37,12 @@
 #define NSEP 1
 #define SEP(c) ((c) == '/')
 #define DRIVE(p, n) 0
+#endif
+
+#if WINDOWS
+#define SAMEROOT(a, ra, b, rb) ((ra) == (rb) && !byte_diff((a), (ra), (b)))
+#else
+#define SAMEROOT(a, ra, b, rb) (!(ra) == !(rb))
 #endif
 
 #define ISDOT(p, n) ((n) == 1 && (p)[0] == '.')
