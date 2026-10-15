@@ -886,6 +886,14 @@ Waits for the worktree to settle; the function bodies are the shish files, and t
   `bg`, `kill4`, `grouping`, `option`, `param`): a stale configuration, not the code (same sources, fresh build: pass).
   The older "14 of 190" figure above was measured with a terminal attached.
 
+**qjs-modules: DONE 2026-10-15 (uncommitted).** `src/path-lib.c` is the one-file form: includes, the `internal.h`
+macros (`SEP`, `DRIVE`, `SAMEROOT`, `SEPLEN`, `COMLEN`, `RSEPLEN`, `RCOMLEN`, `ISABS`) with `memmove`/`memcmp`
+shims and a local scanner, then the bodies of `rootlen`, `basename`, `dirlen`, `cat`, `canon`, `abs`, `common`, `rel`,
+`extoff` (shish versions, so `//` roots and `canon` match) and the list functions. Only functions with a user
+in qjs-modules are carried (`isabs/isrel/next/parentlen/resolve` have none). `src/path-core.c` removed; the
+file is picked up by the `src/*.c` glob (`lib/` holds only `*.js`). `test-path.js` 41/41, `test-qjsm`,
+`test-module` pass; ctest shows the same 13 failures as before.
+
 ### Order and checkpoints
 
 0 → 1a → 1b → 1c (commit: "path: internal.h with upper-case macros") → 2 (commit) → 3 (commit per client) →
