@@ -1830,6 +1830,34 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
   - Sharing the library with c-utils and qjs-modules is open decision 7 in `doc/path-lib.md`;
     `qjs-modules/src/path-core.c` is a hand-made copy that can drift.
 
+- **Lift shish's remaining hand-rolled path handling onto `lib/path` (plan, not started).** Each site below
+  splits, joins or classifies a path by looking for `'/'` itself. One commit per site, each with a
+  `tests/fixed.sh` case when behaviour changes; `path_test` covers the library side.
+  - `src/builtin/builtin_cd.c:97` — "is this `.`, `..`, `./x`, `../x` or absolute" → path classifiers.
+  - `src/builtin/builtin_command.c:51` — absolute/`./` test and join with `sh->cwd` → `path_isabs`, `path_cat`.
+  - `src/builtin/core/builtin_dirname.c:33-37` — trailing-slash strip and last-component scan → `path_dirname`.
+  - `src/builtin/core/builtin_cp.c:111`, `builtin_split.c:123` — last-component scans → `path_basename`.
+  - `src/builtin/core/builtin_rm.c:140-143` — trailing-slash strip and "ends in `.` or `..`" refusal → path classifier.
+  - `src/builtin/extra/builtin_dirstack.c:233` — `$HOME` prefix abbreviation to `~` → a `path_` prefix helper.
+  - `src/history/history_init.c:57` — "append `/` unless present" → `path_cat`.
+  - `src/term/term_complete.c:239` — dir/base split of the word under the cursor → `path_dirname`/`path_basename`.
+  - `lib/unix/glob.c:28` — `strrchr` on a pattern → in-tree `str_rchr` at least (the libc-call rule), then check
+    whether `path_basename` fits.
+  - Not path handling, leave alone: `awk_lex.c`, `sed_addr.c`/`sed_parse.c` (`/` delimits a regex), `builtin_expr.c`
+    (division), `builtin_find.c:611` (`/` as an operand kind), `expand_tilde.c`/`parse_unquoted.c` (tilde-prefix syntax).
+
+- **Lift c-utils' hand-rolled path handling onto its `lib/path` (plan, not started).**
+  - `pathlist_get` in `ar-wrap`, `cc-wrap`, `cmake-run` and `msys-shell` still splits `PATH` by hand → `PATH_LIST_FOREACH`.
+  - `exe-wrap`'s lookup does the same → `path_lookup`.
+  - Programs using `path_lookup` were never linked or run after the duplicates were removed
+    (blocked by the untracked `lib/stralloc/readclose_append.c`); do that first.
+
+- **Lift qjs-modules' remaining path handling onto `src/path-core.c` (plan, not started).**
+  - `quickjs-sockets.c` (~line 3013) scans for the last `'/'` itself → `path_basename`/`path_dirname`.
+  - A few `'/'` checks in `src/qjsm.c` and the parts of `quickjs-path.c` not yet on the shared core.
+  - Replace the hand-made `src/path-core.c` copy with the shared library once decision 7 of `doc/path-lib.md`
+    is made.
+
 - **Line-editing/terminal-abstraction/key-bindings rewrite** — a
   design-sized project inherited from the old `TODO` file, not a fixable
   bug. Minimal tab-completion (`src/term/term_complete.c`: filenames, plus
