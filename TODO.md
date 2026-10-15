@@ -727,7 +727,7 @@ Other libc duplicates were surveyed and are **not** worth an option
 `lib/byte.h:63-68`); thin wrappers `path_getcwd` 100, `path_readlink` 64,
 `path_basename` 64, `mmap_read`+`mmap_read_fd` 219, `shell_gethostname`
 88 total ≈0.6 KB of ≈107 KB of code; `path_canonicalize` 591 +
-`path_realpath` 298 implement the *logical* path (`cd -L`) that
+`path_resolve` (formerly `path_realpath`, 298) implement the *logical* path (`cd -L`) that
 `realpath(3)` cannot; `shell_getopt_r` 350 is reentrant where libc's
 `getopt` is not; `fmt_*`/`scan_*` have no libc equivalent without stdio.
 One is a correctness question, not a size one: `path_gethome` (281 B)
@@ -1813,6 +1813,22 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
     host import, not an `execve`.
   - `tests/fixed.sh` hangs under WASI (job-control cases); needs a
     WASI skip list.
+
+- **Path lib: PATH-style lists (`doc/path-lib.md` 5.7) — done, follow-ups open.**
+  `path_listlen`/`path_listnext`/`PATH_LIST_FOREACH`/`path_search` are in; `exec_path`, `source` and `cd`
+  (`$CDPATH`) use them, and `;` separates on every target (`:` too, except on Windows).
+  - Regression coverage is `tests/lib/path_test.c` and `tests/fixed.sh` (list cases); there is no
+    `fixes/NN` patch for the list change itself (`fixes/407` covers only `cp`/`ln`).
+  - Behaviour changes to keep in mind: an empty element, including a leading `:`, is the current
+    directory; `PATH`/`CDPATH` accept `;` on POSIX hosts as well.
+  - Other `PATH` walkers not yet on the list API: `src/builtin/extra/builtin_which.c`,
+    `src/exec/exec_hash.c`, `src/exec/exec_type.c` — move them to `path_search`/`PATH_LIST_FOREACH`.
+  - `ctest` had 43 of 195 tests failing after the list change (all `tests/posix/*.tst` among them);
+    never compared against a pre-change baseline. Build one in a `git worktree` and diff the failing
+    sets before calling any of them a regression.
+  - Not built or run for Windows (`cfg-mingw64`, `cfg-msys`): the `;`-only separator path is untested.
+  - Sharing the library with c-utils and qjs-modules is open decision 7 in `doc/path-lib.md`;
+    `qjs-modules/src/path-core.c` is a hand-made copy that can drift.
 
 - **Line-editing/terminal-abstraction/key-bindings rewrite** — a
   design-sized project inherited from the old `TODO` file, not a fixable
