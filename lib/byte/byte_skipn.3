@@ -1,0 +1,18 @@
+.TH BYTE_SKIPN 3
+.SH NAME
+byte_skipn \- count the run of bytes other than a given byte at the start of a byte array
+.SH SYNOPSIS
+.B #include <byte.h>
+.PP
+.BI "size_t byte_skipn(const void* " p ", size_t " n ", char " c ");
+.SH DESCRIPTION
+.B byte_skipn
+returns the number of consecutive bytes not equal to c at the start of p.
+.SH RETURN VALUE
+The run length; if c does not occur at all, it returns n.
+.PP
+These are the single-byte counterparts of the scan_charset*skip functions.
+byte_skipn is a macro for byte_chr.
+.SH SEE ALSO
+.BR byte_chr (3),
+.BR byte_rskipn (3)

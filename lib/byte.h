@@ -23,7 +23,7 @@
 size_t byte_chr(const void* haystack, size_t len, char needle) __pure__;
 
 /* returns the index of the first byte from the end that is needle */
-size_t byte_rchr(const void* haystack, size_t len, char needle);
+size_t byte_rchr(const void* haystack, size_t len, char needle) __pure__;
 
 /* byte_copy copies in[0] to out[0], in[1] to out[1], ... and in[len-1]
  * to out[len-1]. */
@@ -81,7 +81,7 @@ byte_rchr(const void* haystack, size_t len, char needle) {
   return len;
 }
 #else
-size_t byte_rchr(const void* haystack, size_t len, char needle);
+size_t byte_rchr(const void* haystack, size_t len, char needle) __pure__;
 #endif
 
 
@@ -122,11 +122,13 @@ size_t byte_ccopy(void* out, size_t len, const void* in, char c);
 
 #endif
 
-/* str_chrn returns the index of the first byte that is not value */
-size_t byte_chrn(const void* haystack, size_t len, char value);
-
-/* byte_rchrn returns the index of the first byte from the end that is not needle */
-size_t byte_rchrn(const void* haystack, size_t len, char needle);
+/* byte_skip returns the length of the run of c at the start of p[0..n), byte_rskip at its end;
+ * byte_skipn/byte_rskipn the length of the run of bytes other than c. The scan_charset*skip
+ * counterparts for a single byte; byte_skipn is byte_chr. */
+size_t byte_skip(const void* p, size_t n, char c) __pure__;
+size_t byte_rskip(const void* p, size_t n, char c) __pure__;
+size_t byte_rskipn(const void* p, size_t n, char c) __pure__;
+#define byte_skipn(p, n, c) byte_chr((p), (n), (c))
 
 /* convenience shortcut to test for equality */
 #define byte_equal(a, len, b) (!byte_diff((a), (len), (b)))

@@ -53,10 +53,18 @@
 #define ISABS(p, n) (((n) >= 1 && SEP((p)[0])) || ((n) >= 3 && DRIVE(p, n) && SEP((p)[2])))
 #define ISREL(p, n) (!ISABS(p, n))
 
+#if NSEP >= 2
 #define SEPLEN(p, n) scan_charsetnskip((p), SEPCHARS, (n))
 #define RSEPLEN(p, n) scan_charsetnrskip((p), SEPCHARS, (n))
 #define COMLEN(p, n) scan_noncharsetnskip((p), SEPCHARS, (n))
 #define RCOMLEN(p, n) scan_noncharsetnrskip((p), SEPCHARS, (n))
+#else
+/* one separator character: no charset scanning needed */
+#define COMLEN(p, n) byte_skipn((p), (n), SEPCHARS[0])
+#define RCOMLEN(p, n) byte_rskipn((p), (n), SEPCHARS[0])
+#define SEPLEN(p, n) byte_skip((p), (n), SEPCHARS[0])
+#define RSEPLEN(p, n) byte_rskip((p), (n), SEPCHARS[0])
+#endif
 
 /* the symlink-following worker of path_resolve() (path_canonicalize.c) */
 int path_canonicalize(const char* path, stralloc* sa, int symbolic);

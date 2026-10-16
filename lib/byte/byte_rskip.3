@@ -1,0 +1,18 @@
+.TH BYTE_RSKIP 3
+.SH NAME
+byte_rskip \- count the run of a byte at the end of a byte array
+.SH SYNOPSIS
+.B #include <byte.h>
+.PP
+.BI "size_t byte_rskip(const void* " p ", size_t " n ", char " c ");
+.SH DESCRIPTION
+.B byte_rskip
+returns the number of consecutive bytes equal to c at the end of p.
+.SH RETURN VALUE
+The run length; if the whole array is c, it returns n; if n is 0, it returns 0.
+.PP
+These are the single-byte counterparts of the scan_charset*skip functions.
+
+.SH SEE ALSO
+.BR byte_skip (3),
+.BR byte_rskipn (3)
