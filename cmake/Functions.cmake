@@ -11,18 +11,16 @@ function(add_cflags ADD)
   else()
     set(OUTPUT_VAR "${ARGV1}")
   endif()
-  
-  #message_func("add_cflags" ${ADD} ${OUTPUT_VAR})
 
-  set(RESULT "${${OUTPUT_VAR}}")
-  string(REGEX REPLACE " +" ";" FLAGS "${RESULT}")
-  string(REGEX REPLACE "^;+" "" FLAGS "${FLAGS}")
-  list(REMOVE_DUPLICATES FLAGS) 
+  # space-separated, as CMake wants flag strings: "-a -b", never "-a;-b"
+  separate_arguments(FLAGS UNIX_COMMAND "${${OUTPUT_VAR}}")
+
   if(NOT ADD IN_LIST FLAGS)
-    list(APPEND RESULT ${ADD})
+    list(APPEND FLAGS "${ADD}")
   endif()
 
   if(OUTPUT_VAR)
+    string(REPLACE ";" " " RESULT "${FLAGS}")
     set("${OUTPUT_VAR}" "${RESULT}" PARENT_SCOPE)
   endif()
 endfunction()
