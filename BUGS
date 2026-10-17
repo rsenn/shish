@@ -329,10 +329,10 @@
   diff <(echo a) <(echo b)     # unexpected token (
   ```
 
-- mingw-ls-s-issock-undefined: `builtin_ls.c:278` uses `S_ISSOCK` without the `#ifdef S_ISSOCK` guard that
-  line 252 has, and mingw's headers do not define it, so `shish.exe` fails to link.
+- mingw-date-test-setenv-undefined: `tests/lib/date_test.c` calls `setenv()`, which mingw does not have, so the
+  `date_test` target fails to link and a plain `cmake --build` of the mingw tree ends in an error (`shish.exe` itself links).
 
   **Repro:**
   ```sh
-  cmake --build build/x86_64-w64-mingw32     # libshell.a(builtin_ls.c.obj): undefined reference to `S_ISSOCK'
+  cmake --build build/x86_64-w64-mingw32     # date_test.c:26: undefined reference to `setenv'
   ```

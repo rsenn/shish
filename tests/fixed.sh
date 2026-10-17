@@ -6730,6 +6730,8 @@ rm -rf "$PLDIR"
 ##       so pathname expansion was silently off in musl builds
 ##   404 arena_test skips the brk arena where sbrk() cannot grow the break (musl)
 ## Verified by building with musl-gcc and running ctest (builtin-split, expand-brace, expand-fields).
+##   409 ls --color: S_ISSOCK is guarded for mingw, which lacks it; shish.exe links and runs under wine
+##       (WINEPATH=/usr/x86_64-w64-mingw32/lib for libwinpthread): a link-time fix, no shell assertion.
 ##   408 cmake: the compiler-flag probes append to CMAKE_C_FLAGS_MINSIZEREL/_DEBUG instead of replacing them,
 ##       and _XOPEN_SOURCE=600 is defined (was -D_XOPEN=600_SOURCE). A configure-time fix, nothing for a shell
 ##       assertion to check; verified: flags.make reads `C_FLAGS = -Os -falign-... -ffunction-sections`, the

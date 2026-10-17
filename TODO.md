@@ -45,10 +45,10 @@ Checked 2026-10-17 against `v0.10.0` (36 commits, 531 files); the procedure is t
    `-fno-*-tables`/`--gc-sections` set). Still to do: `README.md` and the site say "197 KB" and "184 KB of WebAssembly":
    re-measure every figure for the release (`grep -rn '197 KB'`), do not copy it; and run the full `ctest` on a
    `MinSizeRel` build, since the new flags (`-fno-jump-tables`, `-fmerge-all-constants`, `-Wl,-z,norelro`) were never in a release.
-2. **Windows does not link** (`BUGS: mingw-ls-s-issock-undefined`, one symbol). `x86_64-w64-mingw32-gcc` and `wine` are
-   installed now (0.10 shipped no Windows artifact: no toolchain), so a `.exe` is possible once it links; then run it
-   under wine, since the `;`-separated `PATH`, the wide `glob()` and the `lib/path` changes have only been compiled
-   (`glob()` alone ran, in a stand-alone driver).
+2. **Windows:** `shish.exe` links since `fixes/409` and runs under wine (`WINEPATH=/usr/x86_64-w64-mingw32/lib`;
+   `echo`, `$((...))`, the wide `glob()` on `/usr/*`). 0.10 shipped no Windows artifact (no toolchain); one is possible
+   now. Still untested: the `;`-separated `PATH` and the `lib/path` changes, and the test suite on wine
+   (`BUGS: mingw-date-test-setenv-undefined` breaks a whole-tree `cmake --build`).
 3. **Version and notes:** `PACKAGE_VERSION 0.10` (`CMakeLists.txt:8`), `AC_INIT` (`configure.ac:8`), a `ChangeLog` entry.
    The working tree is dirty (uncommitted `src/filter/filter_*.c` and untracked build litter): commit first, because
    `sync.sh` publishes the working tree.
@@ -715,7 +715,7 @@ unconditionally (the `HAVE_GLOB`/`HAVE_GLOB_H` probes in `CMakeLists.txt`, `conf
 no reader left: delete them, or let `USE_LIBC_GLOB` below take their place). The Windows `glob()` is wide: it
 converts the pattern with `u8tou16`, calls `FindFirstFileW`/`ExpandEnvironmentStringsW` and returns UTF-8 names
 (1808 B, mingw `-Os`). Run under wine through a stand-alone driver (`*`, `sub/*`, `é*`, `é?.txt`, a no-match
-pattern); `shish.exe` itself does not link yet (`BUGS: mingw-ls-s-issock-undefined`).
+pattern) and again through `shish.exe` (`echo /usr/*`).
 
 **Plan: an internal POSIX `glob`, and a `USE_LIBC_GLOB` option (2026-09-19).**
 Policy for everything shish re-implements that libc also has: use libc's

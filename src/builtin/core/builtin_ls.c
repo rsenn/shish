@@ -275,8 +275,12 @@ ls_color(unsigned int mode) {
     return "36";
   if(S_ISREG(mode))
     return mode & 0111 ? "33" : 0;
-  if(S_ISFIFO(mode) || S_ISSOCK(mode))
+  if(S_ISFIFO(mode))
     return "35";
+#ifdef S_ISSOCK
+  if(S_ISSOCK(mode))
+    return "35";
+#endif
   return S_ISCHR(mode) || S_ISBLK(mode) ? "93" : 0;
 }
 
