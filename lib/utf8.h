@@ -27,6 +27,11 @@ size_t u8skip(const char* s, size_t n, size_t k);
  * stores the UTF-16 units consumed in *used (may be NULL) */
 size_t u8fromu16(char* dst, size_t max, const unsigned short* w, size_t n, size_t* used);
 
+/* UTF-8 to UTF-16: only whole characters, at most max units, no terminator, an invalid
+ * or cut-off byte becomes U+FFFD; returns the units written and stores the bytes
+ * consumed in *used (may be NULL) */
+size_t u8tou16(unsigned short* dst, size_t max, const char* s, size_t n, size_t* used);
+
 /* 1 if the first non-empty of LC_ALL, LC_CTYPE, LANG (each may be NULL) names a UTF-8
  * codeset ("en_US.UTF-8", "C.utf8"); the shell reads its own variables, see sh_utf8() */
 int u8locale(const char* lc_all, const char* lc_ctype, const char* lang);

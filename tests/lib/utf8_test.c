@@ -75,6 +75,17 @@ main(void) {
     check(u8fromu16(b, 8, lone, 3, &used) == 5 && !memcmp(b, "x\xef\xbf\xbdy", 5), "a lone surrogate becomes U+FFFD");
   }
 
+  {
+    unsigned short w[8];
+    size_t used = 0;
+
+    check(u8tou16(w, 8, "a\xf0\x9f\x98\x80\xe2\x82\xac", 8, &used) == 4 && used == 8 && w[0] == 'a' && w[1] == 0xd83d &&
+              w[2] == 0xde00 && w[3] == 0x20ac,
+          "UTF-8 with a 4-byte character converts to a surrogate pair");
+    check(u8tou16(w, 2, "a\xf0\x9f\x98\x80", 5, &used) == 1 && used == 1, "conversion stops before a character that does not fit");
+    check(u8tou16(w, 8, "x\xffy\xc3", 4, &used) == 4 && w[1] == 0xfffd && w[3] == 0xfffd, "invalid and cut-off bytes become U+FFFD");
+  }
+
   check(u8locale("en_US.UTF-8", 0, 0) == 1 && u8locale(0, "C.utf8", 0) == 1 &&
             u8locale(0, 0, "de_DE.UTF-8@euro") == 1 && u8locale(0, 0, "en_US.utf-8") == 1,
         "UTF-8 codesets are recognised in any spelling");

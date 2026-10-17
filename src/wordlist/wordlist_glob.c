@@ -2,14 +2,13 @@
 #include "config.h"
 #endif
 
-/* glob_t's layout must come from whichever glob() actually links:
- * lib/unix/glob.c only compiles in on Windows: elsewhere HAVE_GLOB
- * means the platform's real, larger libc glob_t is used instead of
- * lib/glob.h's smaller one. */
-#ifdef HAVE_GLOB_H
-#include <glob.h>
-#else
+/* glob() is the platform's, or lib/unix/glob.c (UTF-8, wide Win32 API) on Windows */
+#include "../../lib/windoze.h"
+
+#if WINDOWS_NATIVE
 #include "../../lib/glob.h"
+#else
+#include <glob.h>
 #endif
 
 #include "../wordlist.h"
@@ -26,9 +25,7 @@
 void
 wordlist_glob(wordlist* wl, int flags) {
   stralloc* c = wl->cur;
-#ifdef HAVE_GLOB
   glob_t glb;
-#endif
 
   stralloc_nul(c);
 
@@ -43,7 +40,6 @@ wordlist_glob(wordlist* wl, int flags) {
     return;
   }
 
-#ifdef HAVE_GLOB
   byte_zero(&glb, sizeof(glb));
 
   if(!glob(c->s, 0, NULL, &glb)) {
@@ -70,7 +66,6 @@ wordlist_glob(wordlist* wl, int flags) {
     globfree(&glb);
     return;
   }
-#endif
 
   if(!(flags & X_GLOBRES))
     expand_unescape(c, parse_isesc);
