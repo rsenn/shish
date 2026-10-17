@@ -328,3 +328,11 @@
   ```sh
   diff <(echo a) <(echo b)     # unexpected token (
   ```
+
+- mingw-ls-s-issock-undefined: `builtin_ls.c:278` uses `S_ISSOCK` without the `#ifdef S_ISSOCK` guard that
+  line 252 has, and mingw's headers do not define it, so `shish.exe` fails to link.
+
+  **Repro:**
+  ```sh
+  cmake --build build/x86_64-w64-mingw32     # libshell.a(builtin_ls.c.obj): undefined reference to `S_ISSOCK'
+  ```
