@@ -1,5 +1,10 @@
 #include "../filter.h"
 
+/* a count operand such as the N of "head -n N": decimal digits only, 
+ * no overflow.
+ *
+ * returns: 0 and *out set, or -1
+ * ----------------------------------------------------------------------- */
 int
 filter_opt_count(const char* s, unsigned long* out) {
   unsigned long v = 0;

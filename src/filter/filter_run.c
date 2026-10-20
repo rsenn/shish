@@ -5,6 +5,9 @@
 #include "../../lib/buffer.h"
 #include <unistd.h>
 
+/* the whole builtin: init on stdin, drain step() into out, report, release.
+ * a usage error prints "invalid option" and returns 1. 
+ * ----------------------------------------------------------------------- */
 int
 filter_run(const struct filter_ops* ops, int argc, char* argv[], buffer* out) {
   void* ctx = alloc(ops->size);
