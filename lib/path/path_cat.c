@@ -1,10 +1,6 @@
 #include "internal.h"
 
-/* join a and b into out; returns the length the result needs, without the NUL.
- * Nothing is written unless cap > need; out may equal a.
- *
- *   "a","b" -> "a/b"   "a/","b" -> "a/b"   "","b" -> "b"   "a","" -> "a"   "a","/b" -> "/b"
- * ----------------------------------------------------------------------- */
+/* Joins path parts a[0..an) and b[0..bn) into out, inserting a separator if needed, and returns the required length. */
 size_t
 path_cat(char* out, size_t cap, const char* a, size_t an, const char* b, size_t bn) {
   size_t need, sep = 0;
