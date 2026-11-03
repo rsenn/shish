@@ -552,6 +552,48 @@ it has no post-order, no skip, no symlink policy and no loop guard, which is exa
 and `cp` need. Its `dir_open`/`dir_read`/`dir_type` layer (a `FindFirstFile` backend for Windows) is worth
 borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot give it.
 
+
+**Amendment: a second client, the editor (`mote`, working name; spec in `../editor-specification.md`).**
+The editor needs the same two layers and nothing else: `dirlist` for path completion in its palette
+(and later the project tree), `walk` for a fuzzy file finder (skip `.git`, no `stat`). It vendors them
+from `lib/` with `extract-c -J`, on Linux, other Unix, **Windows (MSVC and mingw) and macOS**. That
+changes four things in the plan above:
+
+1. **The Windows backend is needed now, not "if mingw ever needs it".** `WINDOWS_NATIVE` branch of
+   `dirlist_read()`: `FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH)`; the path is
+   converted with `u8tou16`, each `cFileName` back with `u8fromu16`, so the **blob is UTF-8 on every
+   platform**. This also removes the `WINDOWS_NATIVE` compile-out of `term_complete.c`. `WALK_PHYS` does
+   not follow reparse points (junction, symlink), so Windows needs no cycle chain; `WALK_LOGICAL` there
+   uses volume serial + file index.
+2. **Own type constants instead of `DT_*`** (mingw and some libcs lack them): `DL_UNKNOWN, DL_REG,
+   DL_DIR, DL_LNK, DL_OTHER`, mapped from `d_type` or from `dwFileAttributes`. A client that gets
+   `DL_UNKNOWN` calls `walk_stat()` / `lstat` lazily, only for the entries it shows.
+3. **No `stralloc` and no `alloc_re` in `lib/walk`** (the editor does not vendor them). The path buffer
+   and the frame stack are each one growable allocation in a small dedicated `arena`: grow with
+   `arena_grow` while it is the newest allocation, else take a new chunk of twice the size, copy, and
+   `arena_free` the old arena (about 15 lines, one static helper in `walk`). The path stays one
+   contiguous NUL-terminated string and the frames stay one array, as today.
+4. **Order:** `lib/dirlist` (with the Windows backend and `DIRLIST_SORT`) is its own first patch; the
+   editor's palette needs only that. `lib/walk` and the builtin migrations follow in the order above;
+   the editor's finder uses `walk` later.
+
+The `c-utils` `dir`/`rdir` rejection stands: the editor does not use them either (they need the c-utils
+`lib/` headers, narrow Windows paths, and have no skip or post-order).
+
+**Status: step 1, `lib/dirlist`, is done** (`lib/dirlist.h`, `lib/dirlist/dirlist_{read,add,sort}.c`,
+`tests/lib/dirlist_test.c`). As built:
+- `struct dirlist dirlist_read(arena*, path, flags)`: `s == NULL` + `errno` on failure, an empty directory is a
+  valid empty list. Flags `DIRLIST_DOTS`, `DIRLIST_SORT`; `dirlist_sort(arena*, struct dirlist*, cmp)` is public
+  (caller comparator, `NULL` = `str_diff`). Scan with `dirlist_type/name/next` (macros).
+- Built in the arena with `arena_grow`; at a chunk boundary it allocates `2x` and copies (the old block stays
+  as slack until the level is rewound). The slack is trimmed at the end (`arena_trim`).
+- Sort: heap sort over an offset array, permuted copy, both scratch blocks `arena_rewind`ed. Needs about
+  `len + 8 * n` bytes of scratch.
+- Windows: `FindFirstFileExW`, UTF-8 in and out; a file path gives `ENOTDIR` (checked with
+  `GetFileAttributesW`, the error code differs between Windows and wine). Paths longer than `MAX_PATH` (no
+  `\\?\` prefix) are not handled yet.
+- Not done: `term_complete.c` still compiles out on `WINDOWS_NATIVE`, no builtin uses `dirlist` yet.
+
 ---
 
 ## 13. Where `lib/arena.h` would fit in `src/`, easiest first (plan)
