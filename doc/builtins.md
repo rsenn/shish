@@ -39,6 +39,10 @@ the whole family of compressors and decompressors under their usual names
 `argv[0]`); `mv` also needs `rm`'s tree removal, so enabling `mv` compiles
 `builtin_rm.c` too.
 
+`rm`, `chmod -R`, `cp -R` and `find` walk directory trees with `lib/walk`; `ls` and tab completion read
+directories with `lib/dirlist`. Neither follows a symlink unless the utility's options say so; see
+[directory-walk.md](directory-walk.md).
+
 These are off by default. Turn them on and a script stops needing
 coreutils (or `grep`/`sed`):
 

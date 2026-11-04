@@ -18,14 +18,14 @@ fragmentation, execution time.
 | 6-7 | In-process scope helper, trace leftovers | small, independent, no new modules |
 | 8-10 | `sed`/`awk`, `cp`/`mv`, regex engine | feature gaps inside existing builtins |
 | 11 | Applet mode | small, needs only the builtin map |
-| 12 | Directory walker (`lib/dirlist`, `lib/walk`) | prerequisite of `chown`/`du`/... and removes six hand-rolled walks |
+| 12 | Directory work: what is left (`lib/dirlist`, `lib/walk` are done) | `du`/`chown` on the walker, glob on `dirlist`, hardening, Windows |
 | 13 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
 | 14 | Optional alias/history/job control | medium, module splits |
 | 15 | Binary size | independent, measurable |
 | 18 | AST arena | parser-wide; `narg.stra` is already gone (the wordlist port is done, see `git log`) |
 | 19-21 | Filter chaining, tab completion, vi mode | interactive and pipeline features |
 | 22 | Also open (WASI, editor) | WASI: interactive page plan (xterm.js + WASI shim) |
-| 23-25 | More utilities | wait for the walker and the builtin switches |
+| 23-25 | More utilities | wait for the builtin switches |
 | 26 | UTF-8 | largest, optional, touches everything |
 | 27 | Variable table and `exec_hash` PATH check | independent and measurable; pays off most before 18 (AST arena) |
 
@@ -403,296 +403,61 @@ and the script-named-`cat` case for the `sargv[0]` fix.
 
 ---
 
-## 12. One recursive directory walker instead of six hand-rolled ones (Part C, plan)
+## 12. Directory work: what is left
 
-**Builtins that walk a directory tree today** (found with `grep -l 'opendir\|readdir' src lib text`):
+`lib/dirlist` (one directory) and `lib/walk` (a tree) are done, and no builtin calls `opendir()`/`readdir()` any more:
+`rm`, `mv`'s removal, `chmod -R`, `cp -R` and `find` run on `walk`; `ls` and tab completion on `dirlist`. How they work,
+the API and the safety rules are in `doc/directory-walk.md`; what each migration did is in `git log` and
+`fixes/410`, `fixes/411`. Everything below is not done.
 
-| where | what it walks | order | symlinks | extras it needs from a walker |
-|---|---|---|---|---|
-| `core/builtin_rm.c` `builtin_rm_tree()` (also called by `mv`) | `rm -r`, cross-device `mv` | children first, then the directory | never followed (`lstat`) | `-f` (ignore ENOENT), `-v`, `-i` prompts *before* descending and *before* removing, "a refused child keeps its parents" |
-| `core/builtin_chmod.c` `chmod_path()` | `chmod -R` | directory first, then children | command-line operand followed, nested ones skipped | `-v`, `-c`, `-f`, stat before and after |
-| `core/builtin_cp.c` `cpmv_dir()` | `cp -R` | directory created first, then children | `-H` / `-L` / `-P` policy | holds the `DIR*` open while recursing (one fd per level) |
-| `core/builtin_ls.c` `ls_dir()` | `ls -R` | listing of a directory, then each subdirectory | `lstat`, never followed | reads all names first, sorts, then closes the directory |
-| `extra/builtin_find.c` `find_recursive()` | `find` | directory, then children | `-L` follows, with an ancestor `(dev, ino)` chain against loops | predicates run per entry, `-prune`-like skipping |
-| `src/term/term_complete.c` | tab completion | one level only, not recursive | - | wants the same "read a directory into a list" step |
+1. **New clients, written on `lib/walk` from the start** (they are in sections 23-25 as well; the walker is no longer
+   a reason to wait):
+   - `du`: `-a -s -k -x -H -L`; `-x` is `WALK_XDEV`, sizes come from `walk_stat()`, a hard link is counted once
+     (a set of `(st_dev, st_ino)` for `st_nlink > 1`, one array sorted once).
+   - `chown -R` and `chgrp -R`: `-h -H -L -P -f -v -c`; physical by default, `lchown()` for a link met in the tree,
+     `WALK_COMFOLLOW` for `-H`, `WALK_LOGICAL` for `-L`; the owner/group name lookup shared with `ls`.
+   - later: `hardlink` and `switch_root` (util-linux list), `install -d`.
+   Each ships with a test that runs in a `mktemp -d` and checks what a link points at survived (as `tests/builtin-rm.sh`).
+2. **Pathname expansion on `dirlist`.** Replace libc's `glob()` (and `lib/unix/glob.c` on Windows) by `lib/glob`: one
+   `dirlist_read()` per path component (`DIRLIST_NOHIDDEN` unless the component's pattern starts with a dot) matched with
+   `path_fnmatch`, results sorted. This is item 1 of the glob plan in section 15 (measured sizes there); write it on
+   `dirlist` and `arena`, not on `opendir`.
+3. **Close the check-to-open race in `lib/walk` and `lib/dirlist`.** A directory is `lstat`ed right before it is read, but
+   it can still be swapped for a symlink between that and `opendir()`. Use `openat(O_NOFOLLOW | O_DIRECTORY)` plus
+   `fdopendir()`/`getdents`, and `unlinkat()`/`fstatat()` relative to the directory descriptor, behind one `#ifdef` in
+   `lib/walk` (expose `e->dirfd` and `e->name`, so no client changes except `rm`, which switches to `unlinkat`). This also
+   removes the path-length limit of deep trees and makes every syscall O(1) in the depth. Test: a helper process that
+   replaces a directory with a symlink while `rm -r` walks.
+4. **`lib/walk` on Windows.** Today it only compiles (`stat` for `lstat`, no cycle check) and `walk_test` is skipped.
+   Needs: `lstat` that sees reparse points (junction and symlink are `DL_LNK`, not entered), `WALK_LOGICAL` loop check by
+   volume serial plus file index, `\\?\` paths beyond `MAX_PATH` in `dirlist` (not handled yet), `unlink`/`rmdir` of
+   read-only entries in `rm`, and the unit test running under wine. Check `rm`, `chmod -R`, `cp -R`, `find`, `ls` under
+   wine afterwards (only `shish.exe -c` and `ls` of a missing path have been run there).
+5. **Two `ls -R` defects** (`BUGS`: `ls-recursive-link-loop-and-unreadable`): `ls -RL` follows a symlink loop until the path
+   is too long; an unreadable subdirectory prints a blank line but no `path:` header. Fix: keep the `(st_dev, st_ino)` of the
+   directories being listed (a small array, only for `-L`) and print the header before the error.
+6. **`cp -R` stats what the walker already knows.** The walker moved `cp -R` from 207622 to 207781 bytes because files still go
+   through `cpmv_one()`, which `lstat`s again. Split `cpmv_one()` into the stat part and `cpmv_node(o, src, dst, st)`, and give
+   the walker's cached stat (`walk_stat()`) to it: one syscall less per file and the size back below the old figure.
+7. **`rm --one-file-system`** (`WALK_XDEV` exists; the message for the skipped mount point as in GNU `rm`), and the same
+   for `cp -x` if wanted. `find -fstype` needs a mount table and is not part of this.
+8. **Run the conformance suites in a sandbox.** `tests/run-tst.sh` changes into `tests/posix` (or `tests/yash`) and the harness
+   makes its temporary directories there, with the developer's `HOME` and a real working directory. A test of `rm` once
+   removed files outside its directory because an earlier `rm` followed symlinks. Make the wrapper create a private directory
+   outside the repository, set `HOME` and `TMPDIR` to it, absolutize the testee and the test file, and run from there.
+   Until then run `ctest` only with `-DDO_CONFORMANCE_TESTS=OFF` after changing `rm`, `mv`, `find` or `chmod`.
+9. **c-utils.** The `c-utils` session was asked (2026-11-04) to copy `arena`, `dirlist` and `walk` into `../c-utils/lib/` and move
+   its callers: first the flat ones (`pkgcfg.c`, `pathtool.c`, `compiler-wrapper.c`, `path_find.c`, `glob.c`,
+   `directory_iterator.hpp`), then the `rdir` users (`logserial.c`, `genmakefile/{cmake,project,sources}.c`,
+   `test_rdir.c`, `ls-R.cpp`), then `src/dirlist/list-r.c` (blocked on item 4 for its Windows code). Check what it adopted,
+   keep its copies identical to ours (re-sync after every change here), and take its call sites that the API cannot express:
+   decide each on its merits, the API was cut for the shish walkers.
+10. **The editor (`mote`)** vendors `dirlist` (path completion in the palette, project tree) and `walk` (fuzzy finder: skip
+    `.git` with `WALK_PRE` + `walk_skip()`, no `stat`) with `extract-c -J`. A `WALK_NOHIDDEN`/`WALK_SORT` flag was left out of
+    `walk` because no shish client needs it; add it when the finder does. Windows support depends on item 4.
 
-Utilities from `doc/coreutils.md` that need the same walk: `chown -R`, `chgrp -R`, `du` (also `install -d`
-in a later pass).
-
-**Plan.** Two layers, both in `lib/` (generic: only `stralloc`, `byte`, `str` and `<dirent.h>`/`<sys/stat.h>`,
-no shell dependency; `lib/` is compiled into `libowfat.a`, so a build without a walking builtin does not
-link a byte of it):
-
-1. **`lib/dirlist.h` + `lib/dirlist/dirlist_read.c`**: read one directory *whole* into one packed blob, then
-   `closedir()`. A record is `type byte, name, NUL`; `type` is `d_type` (`DT_DIR`, `DT_REG`, ...) or
-   `DT_UNKNOWN` where the platform has none (mingw, some dietlibc builds). 2 bytes of overhead per entry.
-   `.` and `..` are dropped unless `DIRLIST_DOTS` is passed.
-   - **No index.** Clients scan: `p += 1 + str_len(p + 1) + 1`; the `str_len` is noise next to the `lstat` or `unlink`
-     that follows. `struct dirlist { char* s; size_t len, n; }` carries the byte length and the entry count.
-   - **Sorting** (`DIRLIST_SORT`, only `ls` wants it): a temporary `size_t` offset array, sorted with the caller's
-     comparator (default `str_diff`), then the blob is permuted into sorted order and the array dropped. Nothing
-     persists, so the sorted blob is scanned exactly like an unsorted one.
-   - **Ownership.** The blob is built in one scratch `stralloc` that the walk reuses for every directory (one
-     malloc per walk), then frozen with `arena_dup` into the caller's `arena`: exact size, contiguous, pointer-stable
-     (chunks never move, so `walk_keep()` can hand out names). A level is dropped with `arena_rewind` to the
-     `arena_tell` taken before the read; the walk ends with one `arena_free()`. Alternative if the extra copy
-     shows up: build directly in the arena with `arena_grow`, falling back to alloc-and-copy at a chunk boundary.
-   - **Why not a chain of per-entry nodes:** `next` + `type` + alignment is about 16 bytes per entry instead of 2,
-     and a rewind does not lower the peak.
-   - **Measured (2026-10-06, tmpfs, 1M files named `file_0000000_abcdefgh`, `/tmp/claude-1000/dl/dl.c`):**
-     | variant | listing only | `unlink` each entry | peak RSS |
-     | --- | --- | --- | --- |
-     | stream (`readdir` + use, nothing held) | 0.19 s | 4.00 s | ~1.4 MB (reported 8 MB) |
-     | packed blob, read whole | 0.21 s | 4.07 s | 24 MB |
-     | blob + frozen copy (scratch kept) | 0.22 s | 4.21 s | 46 MB |
-     `ru_maxrss` has a floor of 8 MB here (an empty directory reports 8112 KB; the exec inherits the launcher's
-     peak): a bare process has `VmHWM` 1.3 MB, so the real streaming figure is about 1.4 MB, glibc's 32 KB `DIR`
-     buffer included. The blob is 23 bytes per entry (21-char name + type + NUL) and shows at its real size.
-     Time differs by 2-5% (the `unlink` dominates); memory differs 3x and 6x. Streaming is the same speed and
-     the smallest, and it has no copy. Unlinking while iterating the same `DIR*` was correct here (all 1M
-     removed, none skipped; tmpfs only, recheck on ext4 and with a `DT_UNKNOWN` filesystem).
-   - **Decision (by the four metrics in `CLAUDE.md`):** the blob stays for `ls` (needs the whole level for sorting
-     and column width) and for the walker's *descent*, where a level is read whole so only one descriptor is
-     open; but the blob is built directly in the arena (`arena_grow`), not scratch-then-copy, since the
-     frozen copy doubles the peak for no gain. For `rm -rf` and `find` over a huge flat directory the 24 MB blob
-     is acceptable (about 2.4 MB per 100k entries); a streaming `dirlist_next()` is not worth a second code path.
-   - One place to put a `getdents` or `FindFirstFile` backend later; it replaces `ls`'s two `str_dup()` per entry
-     and every client's own `readdir()` loop.
-2. **`lib/walk.h` + `lib/walk/walk_*.c`**: an `fts(3)` equivalent that does not depend on libc's (dietlibc, musl,
-   mingw and wasm have no `fts`; glibc's is not POSIX). It copies `fts`'s *semantics*, not its code:
-   an opaque handle (no globals, so a walk may nest inside another, as `find -exec rm -r` does), pull-style
-   iteration, and an explicit "skip this one" call.
-
-```c
-/* what a visit is about (fts: FTS_D, FTS_DP, FTS_F/SL/..., FTS_DNR/ERR, FTS_DC) */
-enum walk_phase { WALK_PRE, WALK_POST, WALK_FILE, WALK_ERR, WALK_CYCLE };
-enum walk_flag  { WALK_PHYS = 0, WALK_LOGICAL = 1, WALK_COMFOLLOW = 2, /* lstat / follow all / follow operands */
-                  WALK_XDEV = 4, WALK_SORT = 8 };                      /* stay on one device; sort names */
-
-struct walk_ent {
-  const char* path;    /* the whole path, in the walker's one growing buffer: valid until the next walk_read() */
-  const char* name;    /* last component */
-  const char* rel;     /* path below the root operand, no leading '/': "" for the root itself */
-  size_t len;          /* str_len(path) */
-  int depth, phase;
-  int err;             /* errno, when phase == WALK_ERR */
-  unsigned type;       /* d_type, or DT_UNKNOWN: filled without a syscall whenever the directory gave it */
-  unsigned kept : 1;   /* WALK_POST: something below was kept (walk_keep()) */
-};
-
-const struct stat* walk_stat(struct walk*, struct walk_ent*);  /* lstat/stat on demand, as the flags say; cached */
-void walk_keep(struct walk*);                                  /* this entry stays: its ancestors report kept */
-struct walk;                                                 /* opaque */
-struct walk* walk_open(char* const* roots, unsigned flags);  /* NULL-terminated operands, like fts_open() */
-struct walk_ent* walk_read(struct walk*);                    /* next visit; NULL when the walk is done */
-void walk_skip(struct walk*);                                /* on a WALK_PRE entry: do not descend (fts_set(FTS_SKIP)) */
-void walk_close(struct walk*);
-```
-
-   - **Order:** a directory is reported `WALK_PRE` before its children and `WALK_POST` after them, so `cp -R`
-     (create first) and `rm -r` (remove last) use the phase they need and ignore the other.
-   - **One descriptor at a time:** each directory is read whole through `lib/dirlist`, then closed; the walker keeps
-     a stack of name lists, not of `DIR*` (the `cp -R` weakness today).
-   - **Path buffer:** one growing buffer, as `builtin_rm_tree()` already does, not one per level.
-   - **Loops:** an ancestor `(dev, ino)` chain (as `find` already has) reports `WALK_CYCLE` instead of descending.
-   - **Errors are visits** (`WALK_ERR` with `err`), so every builtin keeps its own message wording and its own `-f` handling.
-   - **Skipping:** `walk_skip()` after a `WALK_PRE` is what `rm -i` (descend refused) and `find -prune` need. The
-     `WALK_POST` of a skipped directory is not reported.
-   - **No per-directory state:** the destination of `cp -R` is `dst + (path + rootlen)`, derived, not stored.
-   - **No callback form** in the library: a builtin that wants one is a three-line `while((e = walk_read(w)))`
-     loop. That keeps every `-v`/`-i`/`-f` decision inside the builtin and out of a function pointer with a `void*`.
-   - **Not `nftw`:** its callback has no user pointer, it has no portable skip, it cannot sort, and dietlibc/mingw
-     lack it. **Not libc's `fts`:** same portability gap, and it is not POSIX.
-
-**Findings from the six walkers (what the walker must do better than they do):**
-
-| client | per level / entry today | with `lib/walk` |
-|---|---|---|
-| `rm_tree()` | `lstat` + `unlink`/`rmdir` per entry, one `stralloc` path edit per entry, `kept`/`skipped` ints threaded through the recursion | `d_type` says file or directory: `unlink` without `lstat` (2 syscalls to 1 per file); `walk_keep()` and `e->kept` replace the int plumbing |
-| `chmod_path()` | `lstat` + `stat` + `chmod`; recursion with a 10-argument signature | octal mode without `-c`/`-v`: no `stat` at all (`chmod` only); symbolic or `-c`: one `walk_stat()` |
-| `cpmv_dir()` | `DIR*` held open across the recursion (one fd and one libc 32 KB buffer per level), two `stralloc`s per level | one fd in total; destination is `dst + "/" + e->rel` in a single buffer |
-| `find_recursive()` | `lstat` for *every* entry, even for `find . -name x`; ancestor chain always built | `walk_stat()` only when a predicate needs it (`-size`, `-mtime`, `-perm`; `-type` uses `e->type`); cycle chain only with `WALK_LOGICAL`; `maxdepth` stops the descent without reading the directory |
-| `ls_dir()` | `lstat` per entry always, two `str_dup()` per entry, a `DIR*` held during the listing | `dirlist` buffer, `lstat` only for `-l -t -S -s -i -F -p` (and for `-R` the type comes from `d_type`) |
-| `term_complete` | own `opendir` loop for one level | `dirlist` (one level, no walker) |
-
-   - **No `lstat` unless asked** is the main saving: `find` and `ls` are dominated by the per-entry `lstat`.
-   - **Iterative, not recursive:** an explicit stack of frames `{buffer offset, count, next, path length, dev, ino}`
-     (about 40 bytes per level) in one growing array, so a 3000-deep chain cannot overflow the C stack and each
-     level costs no `malloc`. `dev`/`ino` are only stored for `WALK_LOGICAL`; `WALK_XDEV` stats directories only.
-   - **Entries live in the caller's `arena`, the path in one `stralloc`.** Each level `arena_tell()`s before
-     `dirlist_read()` and `arena_rewind()`s when it is popped, so a finished level costs no `free()` at all and the
-     whole walk ends with one `arena_free()`. Entries are pointer-stable (chunks never move), which is what lets
-     `walk_keep()` hand out `e->name` that survives the walk. The path stays a `stralloc`: it must be one
-     contiguous, NUL-terminated, growable string for the syscalls, which an arena cannot give. The frames are
-     a small array grown with `alloc_re`. The path never contains `.`/`..` (all six clients filter them today).
-     Binary size: the arena code is already linked for `text/dfa` and `text/awk`; in a build without those the
-     walker adds the ~20 tiny `lib/arena` objects (about 1 KB).
-   - **`openat`/`unlinkat`** (when the platform has them) would make every syscall O(1) in the path depth; keep it
-     behind one `#ifdef` inside `lib/walk`, exposing `e->dirfd` and `e->name`, so no client changes if it is added.
-   - **`ls` stays on `dirlist`:** it must print a directory's whole listing, in its own sort order and after
-     `stat`ing the entries, *before* descending, which a pull walker cannot offer; `ls -R` recurses over
-     `dirlist` results (`d_type == DT_DIR`) itself.
-   - **Expected size:** the six walking blocks are about 85 (`rm`), 25 (`chmod`), 55 (`cp`), 65 (`find`), 40 (`ls`)
-     and 12 (completion) lines; each becomes a `walk_open`/`walk_read` loop of 10-25 lines of client logic, so the
-     clients shrink by roughly 150-200 lines in total against about 250 lines of library (`dirlist` 60, `walk` 190),
-     which is only linked into builds that contain a walking builtin.
-   - **Test:** `tests/walk_test.c` over a generated tree: symlink loop (`WALK_LOGICAL` reports `WALK_CYCLE`), an
-     unreadable directory (`WALK_ERR`, no `WALK_POST`), a 3000-deep chain, `walk_skip` leaving the directory
-     untouched, `walk_keep` marking ancestors, a directory with 20000 entries, `maxdepth`.
-
-**Migration order** (each step keeps that builtin's tests green and is its own patch):
-`lib/dirlist` + a unit test (`tests/walk_test.c`, built like `arena_test`) over a generated tree with a
-symlink loop, a permission-denied directory and a 3000-deep chain -> `rm` / `builtin_rm_tree()` (also
-carries `mv`) -> `chmod -R` -> `find` -> `cp -R` -> `ls -R` (uses `dirlist` only; its per-directory
-header/sort/`total` logic stays) -> `term_complete`. New `chown`/`chgrp`/`du` start on the walker.
-**Not walkers:** `mkdir -p` and `rmdir -p` follow the *components of one path* and stay on `lib/path`.
-
-**Rejected:** importing `../c-utils/lib/{dir,rdir}`. `rdir_read()` yields a flat pre-order stream of paths;
-it has no post-order, no skip, no symlink policy and no loop guard, which is exactly what `rm`, `find`
-and `cp` need. Its `dir_open`/`dir_read`/`dir_type` layer (a `FindFirstFile` backend for Windows) is worth
-borrowing only if the mingw build ever needs a walker that `<dirent.h>` cannot give it.
-
-
-**Amendment: a second client, the editor (`mote`, working name; spec in `../editor-specification.md`).**
-The editor needs the same two layers and nothing else: `dirlist` for path completion in its palette
-(and later the project tree), `walk` for a fuzzy file finder (skip `.git`, no `stat`). It vendors them
-from `lib/` with `extract-c -J`, on Linux, other Unix, **Windows (MSVC and mingw) and macOS**. That
-changes four things in the plan above:
-
-1. **The Windows backend is needed now, not "if mingw ever needs it".** `WINDOWS_NATIVE` branch of
-   `dirlist_read()`: `FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH)`; the path is
-   converted with `u8tou16`, each `cFileName` back with `u8fromu16`, so the **blob is UTF-8 on every
-   platform**. This also removes the `WINDOWS_NATIVE` compile-out of `term_complete.c`. `WALK_PHYS` does
-   not follow reparse points (junction, symlink), so Windows needs no cycle chain; `WALK_LOGICAL` there
-   uses volume serial + file index.
-2. **Own type constants instead of `DT_*`** (mingw and some libcs lack them): `DL_UNKNOWN, DL_REG,
-   DL_DIR, DL_LNK, DL_OTHER`, mapped from `d_type` or from `dwFileAttributes`. A client that gets
-   `DL_UNKNOWN` calls `walk_stat()` / `lstat` lazily, only for the entries it shows.
-3. **No `stralloc` and no `alloc_re` in `lib/walk`** (the editor does not vendor them). The path buffer
-   and the frame stack are each one growable allocation in a small dedicated `arena`: grow with
-   `arena_grow` while it is the newest allocation, else take a new chunk of twice the size, copy, and
-   `arena_free` the old arena (about 15 lines, one static helper in `walk`). The path stays one
-   contiguous NUL-terminated string and the frames stay one array, as today.
-4. **Order:** `lib/dirlist` (with the Windows backend and `DIRLIST_SORT`) is its own first patch; the
-   editor's palette needs only that. `lib/walk` and the builtin migrations follow in the order above;
-   the editor's finder uses `walk` later.
-
-The `c-utils` `dir`/`rdir` rejection stands: the editor does not use them either (they need the c-utils
-`lib/` headers, narrow Windows paths, and have no skip or post-order).
-
-**Status: step 1, `lib/dirlist`, is done** (`lib/dirlist.h`, `lib/dirlist/dirlist_{read,add,sort}.c`,
-`tests/lib/dirlist_test.c`). As built:
-- `struct dirlist dirlist_read(arena*, path, flags)`: `s == NULL` + `errno` on failure, an empty directory is a
-  valid empty list. Flags `DIRLIST_DOTS`, `DIRLIST_SORT`; `dirlist_sort(arena*, struct dirlist*, cmp)` is public
-  (caller comparator, `NULL` = `str_diff`). Scan with `dirlist_type/name/next` (macros).
-- Built in the arena with `arena_grow`; at a chunk boundary it allocates `2x` and copies (the old block stays
-  as slack until the level is rewound). The slack is trimmed at the end (`arena_trim`).
-- Sort: heap sort over an offset array, permuted copy, both scratch blocks `arena_rewind`ed. Needs about
-  `len + 8 * n` bytes of scratch.
-- Windows: `FindFirstFileExW`, UTF-8 in and out; a file path gives `ENOTDIR` (checked with
-  `GetFileAttributesW`, the error code differs between Windows and wine). Paths longer than `MAX_PATH` (no
-  `\\?\` prefix) are not handled yet.
-- Added 2026-11-04: `DIRLIST_NOHIDDEN`, `dirlist_foreach()`, internal `dirlist_skip()` (shared by both backends); test `test_hidden`.
-- **Step 2, `lib/walk`, is done** (`lib/walk.h`, `lib/walk/walk_{open,read,close,skip,keep,stat,grow}.c`,
-  `tests/lib/walk_test.c`, 50 checks, clean under ASan/UBSan). As in the revision above, minus `rel`-less roots.
-  Safety properties tested: a symlink is a file (`DL_LNK`) and never entered unless `WALK_LOGICAL`/`WALK_COMFOLLOW`;
-  root `"link/"` is looked at as `"link"`; a directory is `lstat`ed again right before it is opened and refused
-  (`ENOTDIR`) if it is no longer one. Residual race: between that `lstat` and `opendir` a directory can still be swapped
-  for a symlink; closing it needs `openat(O_NOFOLLOW)` (see the `openat` bullet above). POSIX only: on
-  `WINDOWS_NATIVE` it compiles with `stat` for `lstat`, has no cycle check, and the test is skipped.
-  **`rm` (and `mv`'s cross-device removal) now runs on it** (`rm_tree()` in `builtin_rm.c`: `WALK_PRE|WALK_POST|WALK_ERR`,
-  never `WALK_LOGICAL`). 46 lines added, 83 removed; `MinSizeRel` text 191239 -> 194891 bytes (+3.6 KB: the first
-  client pulls in arena, dirlist and walk; the next migrations only add their own code). A directory with a failed or
-  declined child is kept silently, so a parent no longer prints a second `ENOTEMPTY` error. Tests: `tests/builtin-rm.sh`
-  (symlinks to a sibling directory, absolute, `..`, `link/`; `-i`; unreadable directory).
-  **`chmod -R` too** (`chmod_tree()` in `builtin_chmod.c`, `WALK_PRE|WALK_ERR`, physical; `maxdepth 0` without `-R`, so
-  one code path; an operand written `link/` gets `WALK_COMFOLLOW`, as the kernel resolves it). 85 lines added, 102
-  removed, the 10-argument `chmod_path()` is a `struct chmod_opt`; text 198241 -> 197949 bytes (-292). Same results as
-  the old code on the new `tests/builtin-chmod.sh` (29 checks, run against both binaries).
-  **`find` too** (`find_tree()` in `builtin_find.c`; `fixes/410`). Predicates take a lazy `find_st(w)` (`walk_stat()`),
-  `-type f/d/l` use `e->type`, so `find . -name x` no longer `lstat`s every entry; `find_recursive()`, the ancestor
-  chain and `find_start_dev` are gone. Output identical to the old binary on 30 invocations over a tree with links, except
-  the intended changes: `-H` follows operands and `-L` everything (both were root-only / not at all), loops are
-  `WALK_CYCLE`, `-delete` refuses `-H`/`-L` and ignores a trailing slash (the old `find link/ -delete` deleted the
-  target's contents). Text 206560 -> 206544. `tests/builtin-find.sh` 30 -> 55 checks.
-  **`cp -R` too** (`cpmv_tree()` + `cpmv_enter()` in `builtin_cp.c`, replacing the recursive `cpmv_dir()`; `fixes/411`).
-  Files still go through `cpmv_one()`, so overwrite/link/fifo/-n/-i rules are untouched; the directory is made on
-  `WALK_PRE` and gets its mode and times on `WALK_POST`; one descriptor in total instead of one `DIR*` per level.
-  A link loop under `-L` was followed without end (the old binary filled the disk in a test); it is now `WALK_CYCLE`.
-  Result trees and messages identical to the old binary on 24 invocations (modes, links, fifo, `-p`, `-a`, `-H`, `-L`,
-  `link/`, `-n`, `-f`, into itself, `mv` across a device). Text 207622 -> 207781 (+159: the walk glue is bigger than
-  the one function it replaces; `cpmv_one()` still stats what the walker already knew). `tests/builtin-cp.sh` 41 -> 51.
-  **`ls`** (`ls_dir()` in `builtin_ls.c`, `dirlist` only; ls stays off the walker since `-t`/`-S` need `stat` before
-  the descent). One arena holds names (they point into the dirlist blob), paths and entries; a directory's share is
-  rewound when it is done, so `ls_free()` and two `malloc`s per entry are gone. `lstat` only when an option looks at
-  more than the name (`-l -s -i -t -S -p -F -L --color`) or the directory gave no type; `-R` takes the type from
-  `d_type`. 363 option/operand combinations give byte-identical output and status to the old binary; `ls` of 20000
-  entries 0.73 s -> 0.34 s (`-l` 3.5 s -> 2.1 s), peak 6.7 -> 6.3 MB. Text 215772 -> 215933 (+161). `tests/builtin-ls.sh`
-  7 -> 20 checks. Two existing `-R` defects recorded in `BUGS` (`ls-recursive-link-loop-and-unreadable`).
-  **`term_complete`** (`src/term/term_complete.c`): the directory is one `dirlist_read()` (`DIRLIST_DOTS` once something is
-  typed, as `readdir` gave `.`/`..`, else `DIRLIST_NOHIDDEN`) into an arena; the candidate list points into the blob and into
-  the static keyword/builtin/function names, so the `str_dup` per candidate and the free loop are gone. The
-  `WINDOWS_NATIVE` compile-out of the whole file is removed: `cfg`-style mingw64 build links `shish.exe` and it runs
-  under wine. `tests/term-complete.sh` 11 -> 20 checks (files, directories, links, dotfiles), identical results on the old
-  binary. Text 215936 -> 215943. **All six walkers of this section are migrated.**
-  **`find -empty`** now asks the walker (`find_empty()` = `walk_kids()`; `find_empty_dir()` and its own `opendir` are
-  gone, so no builtin calls `opendir`/`readdir` any more). `walk_kids()` (new, `lib/walk/walk_kids.c`) returns the current
-  directory's entries as they are now: at `WALK_PRE` it is read once and the descent goes through the same list; at
-  `WALK_POST` it is read afresh, which is what `find -empty -delete` needs (a directory is empty once its contents were
-  deleted). An unused list is dropped at the next `walk_read()`. Results identical to the old binary on 13 `-empty`
-  invocations and 3 `-delete` chains; `walk_test` 50 -> 56 checks, `builtin-find.sh` 55 -> 60. Text 215943 -> 216105 (+162:
-  the lazy list is more code than the 12 lines it replaces; it saves the second `opendir`/`readdir` per directory tested).
-- Done since: every builtin that reads a directory now uses `dirlist` or `walk` (see the notes below).
-
-**Revision (2026-11-03): survey of the shish walkers and the c-utils call sites; only what shish needs is kept.**
-
-c-utils clients (flat name filters, file-only `rdir` loops, `list-r.c`) were checked against the design; none of them
-adds a requirement. They can adopt `lib/dirlist` and `lib/walk` later by copying the modules whole (needs `arena`,
-`byte`, `str`, `utf8`, `windoze.h`); nothing here is shaped for them beyond keeping the modules self-contained.
-
-**`lib/dirlist` additions** (each its own file; existing callers unchanged):
-- `DIRLIST_NOHIDDEN`: drop every name starting with `.` (`term_complete`, `ls` without `-a`). With `DIRLIST_DOTS`
-  (keep `.`/`..`) `ls -a`, `-A` and the default are three flag sets, not an `if` per entry.
-- `dirlist_foreach(p, d)`: the scan loop in `ls`, `term_complete` and the walker.
-
-**`lib/walk`, revised.** Caller-owned handle, one root, phases are bits, files are the default:
-
-```c
-enum { WALK_FILE = 1, WALK_PRE = 2, WALK_POST = 4, WALK_ERR = 8, WALK_CYCLE = 16 };  /* e->phase, and the report mask */
-enum { WALK_LOGICAL = 32, WALK_COMFOLLOW = 64, WALK_XDEV = 128 };
-
-struct walk_ent {
-  const char* path;  /* "root/a/b": for the syscall; valid until the next walk_read() */
-  const char* rel;   /* "a/b", "" for the root: the cp -R destination is dst + "/" + rel */
-  const char* name;  /* last component */
-  size_t len;        /* str_len(path) */
-  int depth, phase, err;
-  unsigned char type; /* DL_*, never DL_UNKNOWN (the walker lstat()s only when the directory gave none) */
-  unsigned islink : 1, kept : 1;   /* reached through a symlink (type is the target's); WALK_POST: walk_keep() below */
-};
-
-struct walk { /* public so the caller can put it on the stack; fields private; w->maxdepth, -1 = unlimited */ };
-
-int  walk_open(struct walk*, const char* root, unsigned flags);  /* flags: report mask | policy; 0 = files only */
-struct walk_ent* walk_read(struct walk*);
-const struct stat* walk_stat(struct walk*, struct walk_ent*);  /* lstat/stat per policy, cached for this entry */
-void walk_skip(struct walk*);  void walk_keep(struct walk*);  void walk_close(struct walk*);
-```
-
-What changed against the first draft, and which shish client forced it:
-1. **Report mask instead of always reporting every phase.** `rm` asks for `WALK_POST|WALK_ERR`, `cp` for
-   `WALK_PRE|WALK_ERR`, `find` for `WALK_PRE` (`-depth`: `WALK_POST`); none filters phases by hand. Files only
-   is the zero value. An unreported error skips that directory silently.
-2. **A file as the root is a single `WALK_FILE`, depth 0**: `rm`, `chmod` and `find` operands are often files.
-3. **One root, caller-owned struct** (not `fts`'s vector, not a malloc'd handle): `find -exec rm -r` nests walks, and
-   every builtin loops over its operands for its own per-operand rules (`rm` refusing `.`, `find`'s `start_dev`).
-4. **`type` is never `DL_UNKNOWN`, `islink` is separate.** The walker needs the type to decide whether to descend,
-   so it does the one `lstat` when the directory gave none; `rm` then unlinks without an `lstat`.
-5. **`rel` next to `path`** for `cp -R`.
-6. **`maxdepth` as a member**, not a flag argument: it prevents the directory read, skipping at `WALK_PRE` would not.
-7. **`WALK_XDEV` stats directories only; `WALK_LOGICAL` keeps the ancestor chain only when set** (as before).
-8. Not added: lazy `walk_kids()` (`find_empty_dir()` stays), `WALK_SORT`, `WALK_NOHIDDEN` (the editor's finder can
-   add the latter when it gets there). `ls -R` stays on `dirlist`: its `-t`/`-S` orders need `stat` before the descent.
+**Order:** 5 and 6 (small, existing code), 1 (`du` first), 8 before the next change to a deleting builtin, 2, 3, 4, then 7.
+Items 9 and 10 follow the other side's schedule.
 
 ---
 
@@ -724,34 +489,32 @@ It does not fit objects freed one by one in any order (history ring, job table, 
    `wordlist_argv`, one `arena_tell`/`arena_rewind` per command in `expand_arena`, no `alloca`). Left: the
    `envp`/`sargv` vectors in `exec_program.c` and `eval_pipeline.c` (`alloca` or `alloc` per command, `HAVE_ALLOCA`
    split); `var_count(V_EXPORT)` there is an O(n) walk (section 27).
-3. **`term_complete.c`** (easy): `names[]` of `str_dup`s plus six `stralloc_free`s at the end, all one completion
-   round. One arena, freed with `arena_reset`; fits the Part C `walk` as its `keep` storage.
-4. **`source_alias.c`** (easy): `alias_frame`, `alias_popped` and the alias copies are pushed and popped in LIFO
+3. **`source_alias.c`** (easy): `alias_frame`, `alias_popped` and the alias copies are pushed and popped in LIFO
    order while a line is parsed. `arena_tell` at push, `arena_rewind` at pop. Check `alias_popped` outliving a frame.
-5. **`redir_*.c`, `eval_case.c`, `eval_command.c` heredoc** (easy): local `stralloc`s (`sa`, `delim`, `word`,
+4. **`redir_*.c`, `eval_case.c`, `eval_command.c` heredoc** (easy): local `stralloc`s (`sa`, `delim`, `word`,
    `pattern`, `heredoc`) built per command and freed at the end; with step 1 they become one rewind. Low value alone.
-6. **`prompt_expand.c`, `sh_loop.c` `cmd`** (easy): one buffer per prompt or per input line; keep as `stralloc`
+5. **`prompt_expand.c`, `sh_loop.c` `cmd`** (easy): one buffer per prompt or per input line; keep as `stralloc`
    (single long-lived buffer is what `stralloc` is for). Not a candidate; listed so nobody tries.
-7. **`sh_setargs.c`, positional parameters** (medium): `args->v[i] = str_dup(...)` plus the vector, replaced on
+6. **`sh_setargs.c`, positional parameters** (medium): `args->v[i] = str_dup(...)` plus the vector, replaced on
    every `set --`, function call and `shift`. A per-frame arena makes `sh_push`/`sh_pop` a `tell`/`rewind` pair
    and removes the free loop; needs `shift` to drop the first word without freeing it (arena just keeps it).
-8. **`exec_search.c` snapshot, `exec_hash.c` path cache** (medium): the node snapshot (`snap->nodes`) lives for
+7. **`exec_search.c` snapshot, `exec_hash.c` path cache** (medium): the node snapshot (`snap->nodes`) lives for
    one lookup (arena fits); the hash entries (`exec_create.c`) are removed one by one by `hash -r`/`PATH` change,
    so they stay on the heap unless `hash -r` is the only way out (then one arena reset).
-9. **`parse/` token and word buffers** (medium): each token is a `stralloc` then copied into a node. If the tree
+8. **`parse/` token and word buffers** (medium): each token is a `stralloc` then copied into a node. If the tree
    arena (section 18) exists, the parser allocates the node and the string straight into it and the temporary
    `stralloc`s shrink to one reusable scratch. Do not start before section 18.
-10. **`eval_function.c` function bodies** (medium, part of section 18): `nfunc.name = str_dup(...)` plus `tree_copy`
+9. **`eval_function.c` function bodies** (medium, part of section 18): `nfunc.name = str_dup(...)` plus `tree_copy`
     into a dedicated arena per function; redefinition frees the arena instead of calling `tree_free`.
-11. **`var/` and `vartab/`** (hard, probably never): variables are set, unset and exported in any order and
+10. **`var/` and `vartab/`** (hard, probably never): variables are set, unset and exported in any order and
     `var_export` hands pointers to the environment. Only the *value* of a `local` could live in a function-frame
     arena, which needs scope tracking `var` does not have. Leave on the heap.
-12. **`history/`** (never): ring of entries freed one by one on overflow. Heap is right.
-13. **`job/`, `fd/`, `fdtable/`, `fdstack/`** (never): objects with independent lifetimes and an fd tied to each.
+11. **`history/`** (never): ring of entries freed one by one on overflow. Heap is right.
+12. **`job/`, `fd/`, `fdtable/`, `fdstack/`** (never): objects with independent lifetimes and an fd tied to each.
     `fd_filter.c` `FD_BUFSIZE` buffer is one block per filter, nothing to gain.
 
-**Order of work.** stralloc step 1 and the `stralloc_trunc` fix, then 1 + 2 + 3 (each is a leaf and removes more
-code than it adds), then 4, 5, 7, 8. Items 9 and 10 belong to section 18. Every step is judged by the same test:
+**Order of work.** stralloc step 1 and the `stralloc_trunc` fix, then 1 + 2 (each is a leaf and removes more
+code than it adds), then 3, 4, 6, 7. Items 8 and 9 belong to section 18. Every step is judged by the same test:
 the binary does not grow (`size shish` before and after on `MinSizeRel`) and `alloc`-call counts per command in the
 section 18 measurement drop. A step that grows the binary without lowering those counts is not merged.
 
@@ -848,7 +611,7 @@ Measured in the musl static build:
 | symbol pulled in | bytes | why | replacement |
 |---|---|---|---|
 | `pow` (+ libm) | 1916 | `A_EXP` in `expand_arith_binary.c:51` | integer `**` loop -- shell arithmetic is integer, so `pow()` is also a correctness hazard |
-| `glob` + `do_glob` + `fnmatch_internal` | ~5200 | `wordlist_glob.c` | the shell already has `path_fnmatch` (1564 bytes); glob = readdir + that |
+| `glob` + `do_glob` + `fnmatch_internal` | ~5200 | `wordlist_glob.c` | the shell already has `path_fnmatch` (1564 bytes); glob = `dirlist` + that |
 | `__qsort_r` | 991 | `term_complete.c:60`, sorting completions | insertion sort over a handful of names |
 
 `lib/unix/glob.c` is `#if WINDOWS_NATIVE` only, so every Unix build takes libc's. `wordlist_glob.c` has no `#if` in
@@ -877,8 +640,8 @@ musl, which is the figure above):
 | glibc, static | 31 KB of code: `glob.o` 11.8 KB + `fnmatch.o` 19.2 KB (`libc.a` members; locale code they pull in not counted) |
 | Windows | internal `lib/unix/glob.c`: 1808 B (mingw `-Os`, wide API + UTF-8 results) |
 
-1. **Write `lib/glob/` (POSIX flavour)**: `opendir`/`readdir` per path
-   component + `path_fnmatch` (with `PATH_FNM_PERIOD`), same `glob()` /
+1. **Write `lib/glob/` (POSIX flavour)**: `dirlist_read` per path
+   component (section 12 item 2) + `path_fnmatch` (with `PATH_FNM_PERIOD`), same `glob()` /
    `globfree()` names and `gl_pathc`/`gl_pathv` as `lib/glob.h`, so
    `wordlist_glob.c` needs no change beyond the one `#include` that picks the header
    (`WINDOWS_NATIVE` today, `USE_LIBC_GLOB` then). Estimate ≈150-200 lines, ≈1.2-1.8 KB (Windows
@@ -1173,7 +936,7 @@ returning NULL, nothing printed) for anything that changes shell state, which is
 ## 20. Tab-completion: context-aware, and extensible through `complete`
 
 **Not started beyond the first slice; this section is the plan.** (The
-file is `src/term/term_complete.c`, 363 lines; there is no
+file is `src/term/term_complete.c`; there is no
 `term_completion.c`.) Today TAB completes *file names*, and, since the
 first-word change, also reserved words that begin a construct, builtins
 and function names at the first word of a command (`tests/term-complete.sh`).
@@ -1217,10 +980,8 @@ Facts about the code that shape the design (all checked 2026-09-20):
   commands, not all of `$PATH`), `sig_name()`, `expand_tilde_lookup()`.
 - shish has **no arrays** (`a=(1 2)` is a syntax error), so bash's
   `COMP_WORDS`/`COMPREPLY` arrays need an equivalent (see Phase 5).
-- `term_complete.c` is compiled out on `WINDOWS_NATIVE`; no `opendir`
-  fallback there.
-- Candidates are `str_dup`'d one by one and de-duplicated by a linear scan;
-  fine for hundreds, quadratic for a `$PATH` with 3000 commands.
+- Candidates are de-duplicated by a linear scan; fine for hundreds,
+  quadratic for a `$PATH` with 3000 commands.
 
 ### Design
 
@@ -1737,7 +1498,7 @@ be a filter, a category, and the source file it should share with its relatives:
 - `doc/coreutils.md` (58 entries from `coreutils.unimplemented`): start with the one-liners
   (`sync arch hostid yes tty nproc whoami logname printenv`, about 250 lines), then `tac truncate mkfifo nice
   nohup seq cksum`, then the text filters (`expand unexpand fold comm base64 base32`), then `chown chgrp pathchk du
-  df` on the directory walker, and `dd od pr join csplit stty` last.
+  df` (`chown`, `chgrp`, `du` on `lib/walk`), and `dd od pr join csplit stty` last.
 - `doc/util-linux.md` (80 entries from `util-linux.unimplemented`): Linux-only, mostly root-only, so every one is off
   by default behind its own `BUILTIN_<NAME>` and compiled only where the headers exist. Start with the scripting
   staples (`rev mcookie mesg setsid mountpoint fallocate flock namei isosize`), then the process wrappers
@@ -1745,9 +1506,9 @@ be a filter, a category, and the source file it should share with its relatives:
   switch_root`, testable with `unshare -Ur`), then a shared `lib/coltab` table printer and the `ls*` listing tools.
   Not worth building: `su sulogin getty agetty fsck* mkfs.*`.
 
-**Prerequisites, in this order** (sections 5 and 12): the builtin map so a file can hold
-several builtins, the per-builtin switches (Part B) so each of them can be left out, and the directory walker (Part C)
-for `chown`, `chgrp`, `du`, `hardlink` and `switch_root`. Do not start a utility from either list before sections 5 and 12 are done.
+**Prerequisite** (section 5): the builtin map so a file can hold several builtins, and the per-builtin switches (Part B)
+so each of them can be left out. Do not start a utility from either list before section 5 is done. `chown`, `chgrp`,
+`du`, `hardlink` and `switch_root` start on `lib/walk` (section 12 item 1).
 
 **Cross-cutting decisions to take first** (also in the "Open questions" of both documents):
 - whether Linux-only builtins belong in the tree at all (the plan assumes a busybox-like single binary is the goal);
@@ -1822,7 +1583,7 @@ the builtin alone, calibrated on what exists (`tee` 95, `mkdir` 105, `wc` 165, `
 | 3 | `nohup` | 2 | ~70 | ~170 | ignore `SIGHUP`, redirect stdout/stderr to `nohup.out` if they are terminals, `exec_command()`; exit 126/127 |
 | 4 | `renice` | 2 | ~80 | ~250 | `setpriority(2)` over `-p`/`-g`/`-u` ID lists; no exec; `-n` is required in POSIX.1-2024 |
 | 5 | `pathchk` | 2 | ~90 | ~340 | `pathconf(3)` limits, `-p` portable-character check, `-P` empty/leading-hyphen check |
-| 6 | `du` | 3 | ~140 | ~480 | directory walk like `rm -r`; `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
+| 6 | `du` | 3 | ~140 | ~480 | `lib/walk` (section 12 item 1); `-a -s -k -x -H -L`, hard links counted once (`st_dev`/`st_ino` set) |
 | 7 | `fuser` | 4 | ~130 | ~610 | Linux only: scan `/proc/*/fd`, `cwd`, `root`, `maps`; `-c -f -u`; not portable, no test on other systems |
 | 8 | `more` | 4 | ~220 | ~830 | raw-terminal pager on `src/term/` (`term_init`, window size, `SIGWINCH`); commands `q space enter /pattern`; not a filter |
 | 9 | `od` | 4 | ~260 | ~1090 | `-A -j -N -t` (a c d f o u x, sizes), `-v` duplicate folding, the obsolete `-b -c -d -o -s -x` aliases, address radix |
