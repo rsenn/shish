@@ -8,7 +8,7 @@
  *
  *   record = type byte, name, NUL        (2 bytes of overhead per entry)
  *
- *   for(p = dl.s; p < dl.s + dl.len; p = dirlist_next(p))
+ *   dirlist_foreach(p, dl)
  *     use(dirlist_type(p), dirlist_name(p));
  *
  * Names are UTF-8 on every platform. The blob lives until the arena is
@@ -18,8 +18,9 @@
 /* entry types: our own, so no DT_* is needed (mingw and some libcs lack them) */
 enum { DL_UNKNOWN = 0, DL_REG, DL_DIR, DL_LNK, DL_OTHER };
 
-#define DIRLIST_DOTS 1 /* keep "." and ".." */
-#define DIRLIST_SORT 2 /* sort by name with str_diff() */
+#define DIRLIST_DOTS 1     /* keep "." and ".." */
+#define DIRLIST_SORT 2     /* sort by name with str_diff() */
+#define DIRLIST_NOHIDDEN 4 /* drop every name starting with '.', "." and ".." included */
 
 struct dirlist {
   char* s;    /* the records; NULL when the read failed (errno is set) */
@@ -31,11 +32,14 @@ struct dirlist {
 #define dirlist_name(p) ((p) + 1)
 #define dirlist_next(p) ((p) + 2 + str_len((p) + 1))
 
+/* visit every record of struct dirlist d, p is a char* */
+#define dirlist_foreach(p, d) for((p) = (d).s; (p) < (d).s + (d).len; (p) = dirlist_next(p))
+
 /* read directory path; DL_UNKNOWN where the platform gives no type.
  *
  *   arena*       a      receives the blob
  *   const char*  path   UTF-8 directory name
- *   unsigned     flags  DIRLIST_DOTS | DIRLIST_SORT
+ *   unsigned     flags  DIRLIST_DOTS | DIRLIST_SORT | DIRLIST_NOHIDDEN
  * ----------------------------------------------------------------------- */
 struct dirlist dirlist_read(arena* a, const char* path, unsigned flags);
 

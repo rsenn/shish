@@ -104,7 +104,7 @@ dirlist_read(arena* a, const char* path, unsigned flags) {
     size_t n = u8fromu16(name, sizeof(name) - 1, (const unsigned short*)fd.cFileName, lstrlenW(fd.cFileName), NULL);
 
     name[n] = '\0';
-    if((flags & DIRLIST_DOTS) || !(name[0] == '.' && (!name[1] || (name[1] == '.' && !name[2]))))
+    if(!dirlist_skip(name, flags))
       if(dirlist_add(a, &b, dirlist_type_of(fd.dwFileAttributes), name, n))
         err = ENOMEM;
     if(!FindNextFileW(h, &fd)) {
@@ -123,7 +123,7 @@ dirlist_read(arena* a, const char* path, unsigned flags) {
       err = errno;
       break;
     }
-    if(!(flags & DIRLIST_DOTS) && de->d_name[0] == '.' && (!de->d_name[1] || (de->d_name[1] == '.' && !de->d_name[2])))
+    if(dirlist_skip(de->d_name, flags))
       continue;
 #ifdef DT_UNKNOWN
     switch(de->d_type) {

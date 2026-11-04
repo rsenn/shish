@@ -139,6 +139,43 @@ test_basic(void) {
 }
 
 static void
+test_hidden(void) {
+  arena a;
+  struct dirlist d;
+  const char* r;
+  size_t n = 0;
+  char p[600];
+
+  mkd("h");
+  touch("h", "vis");
+  touch("h", ".hid");
+  touch("h", "..two");
+  path(p, "h", NULL);
+  arena_init(&a, &arena_heap, 0);
+
+  d = dirlist_read(&a, p, 0);
+  check(d.s && d.n == 3 && find(&d, ".hid") && find(&d, "..two"), "default: hidden names kept, . and .. dropped");
+
+  d = dirlist_read(&a, p, DIRLIST_NOHIDDEN);
+  check(d.s && d.n == 1 && find(&d, "vis"), "NOHIDDEN: only the visible name");
+
+  d = dirlist_read(&a, p, DIRLIST_NOHIDDEN | DIRLIST_DOTS);
+  check(d.s && d.n == 1 && !find(&d, "."), "NOHIDDEN wins over DOTS");
+
+  d = dirlist_read(&a, p, DIRLIST_DOTS);
+  check(d.s && d.n == 5, "DOTS: everything");
+
+  d = dirlist_read(&a, p, DIRLIST_NOHIDDEN | DIRLIST_SORT);
+  check(d.s && d.n == 1 && sorted(&d, strcmp), "NOHIDDEN with SORT");
+
+  d = dirlist_read(&a, p, 0);
+  dirlist_foreach(r, d)
+    n++;
+  check(d.s && n == d.n, "dirlist_foreach visits every record once");
+  arena_free(&a);
+}
+
+static void
 test_empty(void) {
   arena a;
   struct dirlist d;
@@ -289,6 +326,7 @@ main(void) {
   MKDIR(root);
 
   test_basic();
+  test_hidden();
   test_empty();
   test_many();
   test_nomem();

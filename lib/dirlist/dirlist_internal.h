@@ -12,4 +12,7 @@ struct dirlist_buf {
 /* append one record, 0 on success, -1 on ENOMEM; name has nlen bytes */
 int dirlist_add(arena* a, struct dirlist_buf* b, int type, const char* name, size_t nlen);
 
+/* 1 if name is left out of the list under flags (DOTS, NOHIDDEN) */
+int dirlist_skip(const char* name, unsigned flags);
+
 #endif

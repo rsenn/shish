@@ -369,6 +369,7 @@ lib/unix/Makefile
 lib/utf8/Makefile
 lib/byteset/Makefile
 lib/dirlist/Makefile
+lib/walk/Makefile
 lib/wait/Makefile
 text/Makefile
 text/dfa/Makefile
