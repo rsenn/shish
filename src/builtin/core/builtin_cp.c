@@ -11,11 +11,11 @@
 #include "../../../lib/fmt.h"
 #include "../../../lib/windoze.h"
 #include "../../../lib/unix.h"
+#include "../../../lib/walk.h"
 #include "config.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h> /* rename() only */
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -134,6 +134,23 @@ cpmv_inside(const struct stat* dir, const char* dst) {
 
   stralloc_free(&p);
   return ret;
+}
+
+/* report "'src' and 'dst' are the same file"; returns 1 */
+static int
+cpmv_same_file(struct cpmv* o, const char* src, const char* dst) {
+  stralloc msg;
+
+  stralloc_init(&msg);
+  stralloc_cats(&msg, "'");
+  stralloc_cats(&msg, src);
+  stralloc_cats(&msg, "' and '");
+  stralloc_cats(&msg, dst);
+  stralloc_cats(&msg, "' are the same file");
+  stralloc_nul(&msg);
+  builtin_errmsg(o->argv, msg.s, 0);
+  stralloc_free(&msg);
+  return 1;
 }
 
 /* ask "cmd: overwrite 'dst'? " and read one line from standard input
@@ -262,19 +279,32 @@ done:
   return ret;
 }
 
-static int cpmv_one(struct cpmv* o, const char* src, const char* dst, int top);
-
-/* copy a directory hierarchy: the directory is created writable while its
- * contents go in, and gets its real mode afterwards
+/* the walk reached a source directory: make its copy, writable while its
+ * contents go in (cpmv_tree() gives it the real mode afterwards).
+ * Returns 0, or 1 after reporting: nothing below is copied then.
  * ----------------------------------------------------------------------- */
 static int
-cpmv_dir(struct cpmv* o, const char* src, const char* dst, const struct stat* st) {
-  DIR* dp;
-  struct dirent* de;
-  stralloc s, d;
+cpmv_enter(struct cpmv* o, struct walk* w, const char* dst) {
+  const struct stat* st = walk_stat(w);
   struct stat ex;
-  size_t slen, dlen;
-  int ret = 0;
+
+  if(!st) {
+    builtin_error(o->argv, (char*)w->e.path);
+    return 1;
+  }
+
+  /* the root was checked and announced by cpmv_one() */
+  if(w->e.depth) {
+    if(lstat(dst, &ex) == 0 && cpmv_same(st, &ex))
+      return cpmv_same_file(o, w->e.path, dst);
+
+    if(cpmv_inside(st, dst)) {
+      builtin_errmsg(o->argv, (char*)dst, "cannot copy a directory into itself");
+      return 1;
+    }
+
+    cpmv_say(o, w->e.path, dst);
+  }
 
   if(lstat(dst, &ex) == 0) {
     if(!S_ISDIR(ex.st_mode)) {
@@ -286,40 +316,75 @@ cpmv_dir(struct cpmv* o, const char* src, const char* dst, const struct stat* st
     return 1;
   }
 
-  if(!(dp = opendir(src))) {
+  return 0;
+}
+
+static int cpmv_one(struct cpmv* o, const char* src, const char* dst, int top);
+
+/* copy a directory hierarchy: src is a directory (looked at by cpmv_one()),
+ * dst is where it goes; an entry at src/rel goes to dst/rel
+ * ----------------------------------------------------------------------- */
+static int
+cpmv_tree(struct cpmv* o, const char* src, const char* dst) {
+  struct walk w;
+  struct walk_ent* e;
+  const struct stat* st;
+  stralloc d;
+  int ret = 0, follow = o->follow < 0 ? 0 : o->follow;
+
+  /* the root was a directory when cpmv_one() looked, for "link/" the one
+     behind the link; -L follows every link below it too */
+  if(walk_open(&w, src, WALK_PRE | WALK_POST | WALK_ERR | WALK_CYCLE | WALK_COMFOLLOW | (follow == 2 ? WALK_LOGICAL : 0))) {
     builtin_error(o->argv, (char*)src);
     return 1;
   }
 
-  stralloc_init(&s);
   stralloc_init(&d);
-  stralloc_copys(&s, src);
-  stralloc_catc(&s, '/');
-  stralloc_copys(&d, dst);
-  stralloc_catc(&d, '/');
-  slen = s.len;
-  dlen = d.len;
 
-  while((de = readdir(dp))) {
-    if(!str_diff(de->d_name, ".") || !str_diff(de->d_name, ".."))
-      continue;
+  while((e = walk_read(&w))) {
+    stralloc_copys(&d, dst);
 
-    s.len = slen;
-    d.len = dlen;
-    stralloc_cats(&s, de->d_name);
-    stralloc_cats(&d, de->d_name);
-    stralloc_nul(&s);
+    if(e->depth) {
+      stralloc_catc(&d, '/');
+      stralloc_cats(&d, e->rel);
+    }
+
     stralloc_nul(&d);
 
-    if(cpmv_one(o, s.s, d.s, 0))
-      ret = 1;
+    switch(e->phase) {
+      case WALK_FILE:
+        if(cpmv_one(o, e->path, d.s, 0))
+          ret = 1;
+        break;
+
+      case WALK_PRE:
+        if(cpmv_enter(o, &w, d.s)) {
+          ret = 1;
+          walk_skip(&w);
+        }
+        break;
+
+      /* the real mode and times, now that nothing more goes in */
+      case WALK_POST:
+        if((st = walk_stat(&w)))
+          cpmv_attrs(o, d.s, st, 0);
+        break;
+
+      case WALK_ERR:
+        errno = e->err;
+        builtin_error(o->argv, (char*)e->path);
+        ret = 1;
+        break;
+
+      case WALK_CYCLE:
+        builtin_errmsg(o->argv, (char*)e->path, "cannot copy a directory into itself");
+        ret = 1;
+        break;
+    }
   }
 
-  closedir(dp);
-  stralloc_free(&s);
   stralloc_free(&d);
-
-  cpmv_attrs(o, dst, st, 0);
+  walk_close(&w);
   return ret;
 }
 
@@ -344,18 +409,7 @@ cpmv_one(struct cpmv* o, const char* src, const char* dst, int top) {
   have_dst = lstat(dst, &dst_st) == 0;
 
   if(have_dst && cpmv_same(&st, &dst_st) && !link) {
-    stralloc msg;
-
-    stralloc_init(&msg);
-    stralloc_cats(&msg, "'");
-    stralloc_cats(&msg, src);
-    stralloc_cats(&msg, "' and '");
-    stralloc_cats(&msg, dst);
-    stralloc_cats(&msg, "' are the same file");
-    stralloc_nul(&msg);
-    builtin_errmsg(o->argv, msg.s, 0);
-    stralloc_free(&msg);
-    return 1;
+    return cpmv_same_file(o, src, dst);
   }
 
   if(S_ISDIR(st.st_mode)) {
@@ -378,7 +432,7 @@ cpmv_one(struct cpmv* o, const char* src, const char* dst, int top) {
     }
 
     cpmv_say(o, src, dst);
-    return cpmv_dir(o, src, dst, &st);
+    return cpmv_tree(o, src, dst);
   }
 
   if(have_dst) {
@@ -467,18 +521,7 @@ mv_one(struct cpmv* o, const char* src, const char* dst) {
 
   if((have_dst = lstat(dst, &dst_st) == 0)) {
     if(cpmv_same(&st, &dst_st)) {
-      stralloc msg;
-
-      stralloc_init(&msg);
-      stralloc_cats(&msg, "'");
-      stralloc_cats(&msg, src);
-      stralloc_cats(&msg, "' and '");
-      stralloc_cats(&msg, dst);
-      stralloc_cats(&msg, "' are the same file");
-      stralloc_nul(&msg);
-      builtin_errmsg(o->argv, msg.s, 0);
-      stralloc_free(&msg);
-      return 1;
+      return cpmv_same_file(o, src, dst);
     }
 
     if(o->noclobber)

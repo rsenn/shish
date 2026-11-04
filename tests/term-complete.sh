@@ -16,6 +16,14 @@ fi
 TESTDIR=$(mktemp -d)
 cd "$TESTDIR" || exit 1
 : > zzfile
+: > cf_alpha.txt
+: > cf_beta
+: > .cf_hidden
+: > cfx1
+: > cfx2
+mkdir cf_dir
+: > cf_dir/inner_file
+ln -s cf_dir cf_link
 
 cat > driver.py <<'PYEOF'
 import os, pty, sys, time, select, re, fcntl, termios, struct
@@ -74,6 +82,34 @@ assert_nomatch "$OUT" "*echo echo*" "the second word does not complete to a buil
 OUT=$(complete '\t' '\t' '\x03')
 assert_nomatch "$OUT" "*while*" "a bare TAB does not list keywords and builtins"
 assert_match "$OUT" "*zzfile*" "a bare TAB still lists the files"
+
+## file names: a unique file gets a space, a directory (or a link to one) a slash
+OUT=$(complete 'echo cf_al' '\t' '\n')
+assert_match "$OUT" "*echo cf_alpha.txt *cf_alpha.txt*" "a unique file name completes with a trailing space"
+
+OUT=$(complete 'echo cf_di' '\t' 'x\n')
+assert_match "$OUT" "*echo cf_dir/x*" "a unique directory completes with a trailing slash"
+
+OUT=$(complete 'echo cf_li' '\t' 'x\n')
+assert_match "$OUT" "*echo cf_link/x*" "a symlink to a directory completes with a slash too"
+
+OUT=$(complete 'echo cf_dir/in' '\t' '\n')
+assert_match "$OUT" "*echo cf_dir/inner_file *" "completion looks inside the directory typed so far"
+
+OUT=$(complete 'echo cfx' '\t' '\x03')
+assert_match "$OUT" "*cfx1*cfx2*" "several candidates are listed"
+assert_nomatch "$OUT" "*cfx1 *echo cfx1*" "and nothing is inserted beyond what they share"
+
+OUT=$(complete 'echo ' '\t' '\x03')
+assert_nomatch "$OUT" "*.cf_hidden*" "dotfiles are not offered for a bare TAB"
+assert_match "$OUT" "*cf_beta*" "ordinary files are"
+
+OUT=$(complete 'echo .cf_' '\t' '\n')
+assert_match "$OUT" "*echo .cf_hidden *" "dotfiles are offered once a leading dot is typed"
+
+OUT=$(complete 'echo .' '\t' '\x03')
+assert_match "$OUT" "*.cf_hidden*" "a bare dot lists the dotfiles"
+assert_match "$OUT" "* .. *" "and .. (which readdir would give)"
 
 cd / && rm -rf "$TESTDIR"
 

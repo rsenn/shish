@@ -6723,6 +6723,35 @@ assert_equal "$PLDIR/b/plcmd" "$(PATH="/nonexistent:$PLDIR/b"; command -v plcmd)
 assert_equal "b" "$(cd "$PLDIR" && CDPATH="/nonexistent;$PLDIR" && cd b >/dev/null && basename "$PWD")" "CDPATH elements may be separated by a semicolon"
 rm -rf "$PLDIR"
 
+## fixes/410: find -H and -L followed nothing below the operand (-H was treated as -P, -L only dereferenced the
+## operand), and find LINK/ -delete reached through the link into the directory behind it. Now -H follows
+## operands, -L follows everything (loops are reported), and -delete refuses -H/-L and ignores a trailing slash.
+FDIR=$(mktemp -d)
+mkdir -p "$FDIR/tree" "$FDIR/outside"
+touch "$FDIR/outside/precious"
+/bin/ln -s ../outside "$FDIR/tree/out"
+assert_equal "1" "$(find -H "$FDIR/tree/out" | grep -c precious)" "find -H follows a symlink operand"
+assert_equal "0" "$(find -H "$FDIR/tree" | grep -c precious)" "find -H does not follow a symlink below the operand"
+assert_equal "1" "$(find -L "$FDIR/tree" | grep -c precious)" "find -L follows symlinks below the operand"
+find "$FDIR/tree/out/" -delete 2>/dev/null
+assert_equal "0" "$(test -f "$FDIR/outside/precious"; echo $?)" "find LINK/ -delete does not delete what the link points at"
+find -L "$FDIR/tree" -delete 2>/dev/null
+assert_equal "1" "$?" "find -L ... -delete is refused"
+rm -rf "$FDIR"
+
+## fixes/411: cp -RL followed a symlink back to a parent directory without end (each level copied the whole tree
+## again, one directory deeper, until the path got too long); it now reports the loop, skips the link and
+## copies the rest. Also cp -R no longer holds a descriptor open per directory level.
+CDIR=$(mktemp -d)
+mkdir "$CDIR/lp"
+printf 'x\n' >"$CDIR/lp/f"
+/bin/ln -s . "$CDIR/lp/self"
+cp -RL "$CDIR/lp" "$CDIR/lp2" 2>/dev/null
+assert_equal "1" "$?" "cp -RL over a symlink loop fails"
+assert_equal "x" "$(cat "$CDIR/lp2/f")" "cp -RL over a symlink loop still copies the other files"
+assert_equal "1" "$(test -e "$CDIR/lp2/self"; echo $?)" "cp -RL does not copy a symlink loop"
+rm -rf "$CDIR"
+
 ## fixes/401-404 are build/platform fixes with no assertion that can fail on glibc:
 ##   401 builtin_ulimit.c lacked <unistd.h> (implicit geteuid under musl)
 ##   402 libarchive is configured only when compress/uncompress is built

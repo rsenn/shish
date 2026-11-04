@@ -249,6 +249,16 @@
   : >f; ls -l f      # links column is padded to 3, size column to 6, whatever is listed
   ```
 
+- ls-recursive-link-loop-and-unreadable: `ls -RL` enters a symlink back to a parent directory until the path is
+  too long instead of reporting the loop; and `ls -R` prints a blank line (but no `path:` header) before a
+  subdirectory it cannot open, where GNU prints the header and then the error.
+
+  **Repro:**
+  ```sh
+  mkdir lp; : >lp/f; ln -s . lp/self; ls -RL lp | wc -l      # 163 lines; GNU: "not listing already-listed directory"
+  mkdir -p ur/ok ur/locked; chmod 0 ur/locked; ls -R ur      # "ur:" then a blank line, "ur/locked:" is missing
+  ```
+
 - unset-invalid-name-accepted: plain `unset 1x` (no `-v`) is accepted silently with
   status 0. bash does the same, so this is low priority. (`unset -v 1x` reports the name
   and returns 1; as a special builtin it exits a non-interactive shell, like dash.)

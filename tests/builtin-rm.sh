@@ -69,6 +69,52 @@ touch Rtree/sub/f
 rm -R Rtree
 assert_equal "0" "$?" "rm -R (capital) works the same as rm -r"
 
+## rm -r never follows a symlink, wherever it points: links to a sibling
+## directory (relative and absolute), to the parent, and "link/" with a
+## trailing slash. The directories they point at must come through whole.
+mkdir -p victim/real outside/deep
+touch victim/real/f outside/precious outside/deep/precious2
+/bin/ln -s ../outside victim/real/rel
+/bin/ln -s "$TESTDIR/outside" victim/real/abs
+/bin/ln -s .. victim/real/up
+/bin/ln -s real victim/slashlink
+rm -r victim/slashlink/ >/dev/null 2>&1
+X=$(test -f victim/real/f; echo $?)
+assert_equal "0" "$X" "rm -r link/ (trailing slash) does not remove what the link points at"
+rm -r victim
+assert_equal "0" "$?" "rm -r on a tree full of symlinks succeeds"
+X=$(test -e victim; echo $?)
+assert_equal "1" "$X" "the tree with the links is gone"
+X=$(test -f outside/precious -a -f outside/deep/precious2; echo $?)
+assert_equal "0" "$X" "files below a symlinked directory survive rm -r"
+rm -r outside
+
+## -i: declining "descend into directory" keeps it and everything in it
+mkdir -p idir/d
+touch idir/d/f idir/g
+printf 'n\n' | rm -ri idir >/dev/null 2>&1
+X=$(test -f idir/d/f -a -f idir/g; echo $?)
+assert_equal "0" "$X" "rm -ri: declining to descend removes nothing"
+## declining one file keeps its directory, the rest goes
+printf 'y\ny\nn\ny\ny\ny\n' | rm -ri idir >/dev/null 2>&1
+X=$(ls idir | wc -l | tr -d ' ')
+assert_equal "1" "$X" "rm -ri: one refused entry keeps exactly itself and its parents"
+rm -rf idir
+
+## a directory that cannot be read is reported once, without a second
+## error from its parent, and its siblings are still removed
+mkdir -p locked/noread locked/ok
+touch locked/noread/f locked/ok/f
+chmod 0 locked/noread
+if ! test -r locked/noread; then
+  X=$(rm -r locked 2>&1 >/dev/null | wc -l | tr -d ' ')
+  assert_equal "1" "$X" "rm -r with an unreadable directory: one error line"
+  X=$(test -e locked/ok; echo $?)
+  assert_equal "1" "$X" "rm -r with an unreadable directory: the siblings are still removed"
+  chmod 755 locked/noread
+fi
+rm -rf locked
+
 cd /
 rm -rf "$TESTDIR"
 

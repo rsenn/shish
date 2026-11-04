@@ -130,5 +130,40 @@ cp big big2
 assert_equal "$(wc -c <big | tr -d ' ')" "$(wc -c <big2 | tr -d ' ')" "a file larger than the copy buffer keeps its size"
 assert_equal "$(tail -n 1 big)" "$(tail -n 1 big2)" "a file larger than the copy buffer keeps its end"
 
+## -R and symbolic links: -P (default) copies a link as a link, -H follows the operands, -L everything;
+## "link/" names the directory behind the link. A link loop under -L is reported, not followed.
+mkdir -p ld/real outside2
+printf 'p\n' >outside2/precious
+printf 'f\n' >ld/real/f
+/bin/ln -s ../outside2 ld/out
+/bin/ln -s real ld/rlink
+cp -R ld/rlink h1
+assert_equal "real" "$(readlink h1)" "-R of a link operand copies the link"
+cp -RH ld/rlink h2
+assert_equal "f" "$(cat h2/f)" "-RH copies the directory behind a link operand"
+cp -RH ld h3
+assert_equal "../outside2" "$(readlink h3/out)" "-RH copies a link below the operand as a link"
+cp -RL ld h4
+assert_equal "p" "$(cat h4/out/precious)" "-RL copies what a link below the operand points to"
+cp -R ld/rlink/ h5
+assert_equal "f" "$(cat h5/f)" "-R link/ copies the directory behind the link"
+
+mkdir lp
+printf 'x\n' >lp/f
+/bin/ln -s . lp/self
+cp -RL lp lp2 2>/dev/null
+assert_equal "1" "$?" "-RL over a symlink loop fails"
+assert_equal "x" "$(cat lp2/f)" "-RL over a symlink loop copies the rest"
+assert_equal "1" "$(test -e lp2/self; echo $?)" "-RL over a symlink loop does not copy the loop"
+
+## a read-only source directory is copied whole and ends up read-only
+mkdir -p rd/in
+printf 'r\n' >rd/in/f
+chmod 500 rd/in
+cp -R rd rd2
+assert_equal "r" "$(cat rd2/in/f)" "a read-only subdirectory is copied with its contents"
+assert_equal "dr-x------" "$(mode rd2/in)" "and keeps its mode"
+chmod 755 rd/in rd2/in
+
 cd / && rm -rf "$T"
 summary

@@ -10,11 +10,10 @@
 #include "../../../lib/str.h"
 #include "../../../lib/path.h"
 #include "../../../lib/byte.h"
-#include "../../../lib/stralloc.h"
+#include "../../../lib/walk.h"
 #include "../../../lib/unix.h"
 #include <unistd.h>
 #include <errno.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -129,111 +128,104 @@ chmod_symbolic(const char* spec, unsigned int* mode, int is_dir) {
   return *p == '\0';
 }
 
-/* apply mode (octal, or symbolic relative to each path's own current
- * mode) to a single path, recursing into directories first if
- * 'recursive' is set.
- * - lstat() decides whether to recurse, so a symlink to a directory
- *   is changed but not traversed into (matching builtin_rm's
- *   loop-avoidance).
- * - stat() supplies the dereferenced current mode a symbolic spec
- *   applies on top of, matching chmod(2) itself.
- * - with 'force' set, errors are not reported (but still counted),
- *   and sibling entries are still processed.
- * - 'toplevel' distinguishes a command-line operand from an entry
- *   found while recursing: a symlink merely encountered during
- *   recursion is left untouched entirely (matching GNU chmod), while
- *   one named directly is still dereferenced and chmoded.
- *
- *   char*[]        argv         argv, for error reporting
- *   stralloc*      path         path to chmod; reused as scratch space when recursing
- *   char*          spec         octal or symbolic mode spec
- *   int            symbolic     whether spec is symbolic (vs. plain octal)
- *   unsigned int   octal_mode   parsed octal mode, when !symbolic
- *   int            recursive    recurse into directories
- *   int            force        suppress errors, keep processing siblings
- *   int            verbose      print a line for every file processed
- *   int            changes      print a line only for files whose mode changed
- *   int            toplevel     path is a command-line operand, not found by recursion
+/* what chmod was asked to do, for chmod_tree() */
+struct chmod_opt {
+  char** argv;             /* for error reporting */
+  const char* spec;        /* octal or symbolic mode spec */
+  unsigned int octal_mode; /* parsed spec, when !symbolic */
+  unsigned symbolic : 1;   /* spec is symbolic, applied to each file's own mode */
+  unsigned force : 1;      /* suppress errors, keep processing siblings */
+  unsigned verbose : 1;    /* print a line for every file processed */
+  unsigned changes : 1;    /* print a line only for files whose mode changed */
+};
+
+/* apply the mode to one path: stat() supplies the dereferenced current mode a
+ * symbolic spec applies on top of, matching chmod(2) itself.
+ * Returns 0, 1 if chmod(2) failed, -1 if nothing was attempted (already reported).
  * ----------------------------------------------------------------------- */
 static int
-chmod_path(char* argv[],
-           stralloc* path,
-           char* spec,
-           int symbolic,
-           unsigned int octal_mode,
-           int recursive,
-           int force,
-           int verbose,
-           int changes,
-           int toplevel) {
-  struct stat lst, st;
+chmod_one(const struct chmod_opt* o, const char* path) {
+  struct stat st;
   unsigned int old_mode, mode;
   int ret = 0;
 
-  if(lstat(path->s, &lst) == -1) {
-    if(!force)
-      builtin_error(argv, path->s);
-    return 1;
-  }
-
-  if(!toplevel && S_ISLNK(lst.st_mode)) {
-    if(verbose) {
-      buffer_putm_internal(fd_out->w, "neither symbolic link '", path->s, "' nor referent has been changed", 0);
-      buffer_putnlflush(fd_out->w);
-    }
-    return 0;
-  }
-
-  if(stat(path->s, &st) == -1) {
-    if(!force)
-      builtin_error(argv, path->s);
-    return 1;
+  if(stat(path, &st) == -1) {
+    if(!o->force)
+      builtin_error(o->argv, (char*)path);
+    return -1;
   }
 
   old_mode = st.st_mode & 07777;
-  mode = symbolic ? old_mode : octal_mode;
+  mode = o->symbolic ? old_mode : o->octal_mode;
 
-  if(symbolic && !chmod_symbolic(spec, &mode, S_ISDIR(st.st_mode))) {
-    if(!force)
-      builtin_errmsg(argv, spec, "invalid mode");
-    return 1;
+  if(o->symbolic && !chmod_symbolic(o->spec, &mode, S_ISDIR(st.st_mode))) {
+    if(!o->force)
+      builtin_errmsg(o->argv, (char*)o->spec, "invalid mode");
+    return -1;
   }
 
-  if(chmod(path->s, mode) == -1) {
-    if(!force)
-      builtin_error(argv, path->s);
+  if(chmod(path, mode) == -1) {
+    if(!o->force)
+      builtin_error(o->argv, (char*)path);
     ret = 1;
-  } else if((verbose || changes) && (!changes || mode != old_mode)) {
-    buffer_putm_internal(fd_out->w, "changed mode of '", path->s, "'", 0);
+  } else if((o->verbose || o->changes) && (!o->changes || mode != old_mode)) {
+    buffer_putm_internal(fd_out->w, "changed mode of '", path, "'", 0);
     buffer_putnlflush(fd_out->w);
   }
 
-  if(recursive && S_ISDIR(lst.st_mode)) {
-    DIR* dp;
-    struct dirent* de;
-    size_t dirlen = path->len;
+  return ret;
+}
 
-    if(!(dp = opendir(path->s))) {
-      if(!force)
-        builtin_error(argv, path->s);
-      return 1;
-    }
+/* chmod an operand and, with 'recursive', everything below it, directory first.
+ * The walk is physical: a symlink named on the command line is chmoded (and
+ * dereferenced by chmod(2)) but not entered, unless written "link/"; one met while recursing is left
+ * untouched entirely (matching GNU chmod). Returns 1 if anything failed.
+ * ----------------------------------------------------------------------- */
+static int
+chmod_tree(const struct chmod_opt* o, const char* root, int recursive) {
+  struct walk w;
+  struct walk_ent* e;
+  size_t n = str_len(root);
+  int ret = 0, r;
 
-    while((de = readdir(dp))) {
-      if(!str_diff(de->d_name, ".") || !str_diff(de->d_name, ".."))
-        continue;
-
-      path_cat_sa(path, path->s, dirlen, de->d_name, str_len(de->d_name));
-
-      if(chmod_path(argv, path, spec, symbolic, octal_mode, recursive, force, verbose, changes, 0))
-        ret = 1;
-    }
-
-    closedir(dp);
-    path->len = dirlen;
-    stralloc_nul(path);
+  /* "link/" names the directory behind the link, as the kernel resolves it:
+     only then is the root dereferenced */
+  if(walk_open(&w, root, WALK_PRE | WALK_ERR | (n && root[n - 1] == '/' ? WALK_COMFOLLOW : 0))) {
+    builtin_error(o->argv, (char*)root);
+    return 1;
   }
 
+  if(!recursive)
+    w.maxdepth = 0;
+
+  while((e = walk_read(&w))) {
+    if(e->phase == WALK_ERR) {
+      if(!o->force) {
+        errno = e->err;
+        builtin_error(o->argv, (char*)e->path);
+      }
+      ret = 1;
+      continue;
+    }
+
+    if(e->depth && e->islink) {
+      if(o->verbose) {
+        buffer_putm_internal(fd_out->w, "neither symbolic link '", e->path, "' nor referent has been changed", 0);
+        buffer_putnlflush(fd_out->w);
+      }
+      continue;
+    }
+
+    if((r = chmod_one(o, e->path))) {
+      ret = 1;
+
+      /* nothing was changed here, so nothing below is attempted either */
+      if(r < 0 && e->phase == WALK_PRE)
+        walk_skip(&w);
+    }
+  }
+
+  walk_close(&w);
   return ret;
 }
 
@@ -256,12 +248,10 @@ const char help_chmod[] = "    Change file permissions.\n"
 int
 builtin_chmod(int argc, char* argv[]) {
   int c;
-  int verbose = 0, changes = 0, force = 0, recursive = 0;
+  int recursive = 0;
   int failed = 0;
   char *p, *spec, *premode = NULL;
-  unsigned int octal_mode = 0;
-  int symbolic;
-  stralloc path;
+  struct chmod_opt o = {argv, 0, 0, 0, 0, 0, 0};
 
   /* "chmod -w f": a leading-dash word made only of mode characters is the
      mode, not an option; cut it out of argv before option parsing */
@@ -279,9 +269,9 @@ builtin_chmod(int argc, char* argv[]) {
   /* check options */
   while((c = shell_getopt_long(argc, argv, "vcfR", "recursive=R verbose=v changes=c silent=f quiet=f")) > 0) {
     switch(c) {
-      case 'v': verbose = 1; break;
-      case 'c': changes = 1; break;
-      case 'f': force = 1; break;
+      case 'v': o.verbose = 1; break;
+      case 'c': o.changes = 1; break;
+      case 'f': o.force = 1; break;
       case 'R': recursive = 1; break;
       default: return builtin_invopt(argv);
     }
@@ -302,25 +292,18 @@ builtin_chmod(int argc, char* argv[]) {
   /* a mode made up entirely of octal digits is the plain numeric
      form; anything else must parse as symbolic mode instead, applied
      relative to each file's own current mode */
-  symbolic = scan_8int(spec, &octal_mode) != str_len(spec);
-
-  stralloc_init(&path);
+  o.spec = spec;
+  o.symbolic = scan_8int(spec, &o.octal_mode) != str_len(spec);
 
   while((p = argv[shell_optind++])) {
-    stralloc_copys(&path, p);
-    stralloc_nul(&path);
-
-    if(chmod_path(argv, &path, spec, symbolic, octal_mode, recursive, force, verbose, changes, 1)) {
+    if(chmod_tree(&o, p, recursive)) {
       failed = 1;
 
-      if(!force) {
-        stralloc_free(&path);
+      if(!o.force)
         return 1;
-      }
     }
   }
 
-  stralloc_free(&path);
   return failed;
 }
 #endif /* BUILTIN_CHMOD || BUILTIN_MKDIR */

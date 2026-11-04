@@ -12,10 +12,10 @@
 #include "../../../lib/str.h"
 #include "../../../lib/path.h"
 #include "../../../lib/unix.h"
+#include "../../../lib/walk.h"
 #include "../../../lib/scan.h"
 #include <unistd.h>
 #include <errno.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -28,12 +28,6 @@ typedef regex_t find_re;
 typedef struct dfa find_re;
 #endif
 
-struct ancestor {
-  dev_t dev;
-  ino_t ino;
-  struct ancestor* next;
-};
-
 /* >0 while the right side of a && or || that is not needed is parsed: no actions run */
 static int find_dry;
 static int find_bad;
@@ -42,8 +36,9 @@ static int find_prune;   /* -prune was evaluated for the current directory */
 static int find_quit;    /* -quit was evaluated: stop the whole walk */
 static int find_depth; /* -depth or -delete: a directory's contents before the directory itself */
 static int find_xdev;  /* -xdev, -mount: stay on the starting point's device */
+static int find_delete; /* -delete is in the expression */
+static const struct stat find_nostat; /* stands in for an entry that cannot be stat()ed */
 static long find_maxdepth = -1, find_mindepth;
-static dev_t find_start_dev;
 static time_t find_now;
 static char** find_argv;
 static int find_ere; /* -regextype posix-extended: -regex patterns are EREs, else BREs */
@@ -239,29 +234,32 @@ find_regex_free(void) {
   }
 }
 
-static int
-find_empty_dir(const char* path) {
-  DIR* dp = opendir(path);
-  struct dirent* de;
-  int empty = 1;
+/* the stat of the entry being evaluated, taken only when a test needs it */
+static const struct stat*
+find_st(struct walk* w) {
+  const struct stat* st = walk_stat(w);
 
-  if(!dp)
-    return 0;
+  if(!st) {
+    builtin_error(find_argv, (char*)w->e.path);
+    find_failed = 1;
+    return &find_nostat;
+  }
 
-  while((de = readdir(dp)))
-    if(!str_equal(de->d_name, ".") && !str_equal(de->d_name, "..")) {
-      empty = 0;
-      break;
-    }
-
-  closedir(dp);
-  return empty;
+  return st;
 }
 
-static int eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action);
+/* -empty on a directory: nothing in it, as it is now (a -depth walk has emptied it by then) */
+static int
+find_empty(struct walk* w) {
+  const struct dirlist* kids = walk_kids(w);
+
+  return kids && !kids->n;
+}
+
+static int eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action);
 
 static int
-eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action) {
+eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
   if(*i >= end)
     return 1;
 
@@ -269,7 +267,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 
   if(str_equal(arg, "(")) {
     (*i)++;
-    int res = eval_expr(argv, i, end, path, st, has_action);
+    int res = eval_expr(argv, i, end, path, w, has_action);
     if(*i < end && str_equal(argv[*i], ")"))
       (*i)++;
     return res;
@@ -277,7 +275,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 
   if(str_equal(arg, "!")) {
     (*i)++;
-    return !eval_primary(argv, i, end, path, st, has_action);
+    return !eval_primary(argv, i, end, path, w, has_action);
   }
 
   if(str_equal(arg, "-type")) {
@@ -286,20 +284,20 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return 0;
     char* val = argv[(*i)++];
     if(str_equal(val, "f"))
-      return S_ISREG(st->st_mode);
+      return w->e.type == DL_REG;
     if(str_equal(val, "d"))
-      return S_ISDIR(st->st_mode);
+      return w->e.type == DL_DIR;
     if(str_equal(val, "l"))
-      return S_ISLNK(st->st_mode);
+      return w->e.type == DL_LNK;
     if(str_equal(val, "b"))
-      return S_ISBLK(st->st_mode);
+      return S_ISBLK(find_st(w)->st_mode);
     if(str_equal(val, "c"))
-      return S_ISCHR(st->st_mode);
+      return S_ISCHR(find_st(w)->st_mode);
     if(str_equal(val, "p"))
-      return S_ISFIFO(st->st_mode);
+      return S_ISFIFO(find_st(w)->st_mode);
 #ifdef S_ISSOCK
     if(str_equal(val, "s"))
-      return S_ISSOCK(st->st_mode);
+      return S_ISSOCK(find_st(w)->st_mode);
 #endif
     return 0;
   }
@@ -317,7 +315,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       *i = end;
       return 0;
     }
-    return st->st_mtime > ref.st_mtime;
+    return find_st(w)->st_mtime > ref.st_mtime;
   }
 
   /* -links n: link count is n, more than n (+n) or less than n (-n) */
@@ -335,7 +333,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       *i = end;
       return 0;
     }
-    return *s == '+' ? (unsigned long)st->st_nlink > n : *s == '-' ? (unsigned long)st->st_nlink < n : (unsigned long)st->st_nlink == n;
+    return find_compare(*s == '+' ? 1 : *s == '-' ? -1 : 0, (unsigned long)find_st(w)->st_nlink, n);
   }
 
   if(str_equal(arg, "-name") || str_equal(arg, "-iname")) {
@@ -410,7 +408,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 
   if(str_equal(arg, "-not")) {
     (*i)++;
-    return !eval_primary(argv, i, end, path, st, has_action);
+    return !eval_primary(argv, i, end, path, w, has_action);
   }
 
   /* -exec cmd {} ;   -exec cmd {} +   ('{}' anywhere in a word with ';', last word with '+') */
@@ -494,7 +492,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
     if(find_dry)
       return 1;
 
-    if((S_ISDIR(st->st_mode) ? rmdir(path) : unlink(path)) == -1) {
+    if((w->e.type == DL_DIR ? rmdir(path) : unlink(path)) == -1) {
       builtin_error(argv, (char*)path);
       find_failed = 1;
       return 0;
@@ -529,7 +527,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 
   if(str_equal(arg, "-empty")) {
     (*i)++;
-    return S_ISREG(st->st_mode) ? st->st_size == 0 : S_ISDIR(st->st_mode) ? find_empty_dir(path) : 0;
+    return w->e.type == DL_REG ? find_st(w)->st_size == 0 : w->e.type == DL_DIR ? find_empty(w) : 0;
   }
 
   if(str_equal(arg, "-readable") || str_equal(arg, "-writable") || str_equal(arg, "-executable")) {
@@ -571,14 +569,14 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return 0;
     }
 
-    return find_compare(cmp, ((unsigned long long)st->st_size + unit - 1) / unit, n);
+    return find_compare(cmp, ((unsigned long long)find_st(w)->st_size + unit - 1) / unit, n);
   }
 
   /* -mtime/-atime/-ctime N (days, rounded down), -mmin/-amin/-cmin N (minutes, rounded up) */
   if(arg[0] == '-' && (arg[1] == 'm' || arg[1] == 'a' || arg[1] == 'c') && (str_equal(arg + 2, "time") || str_equal(arg + 2, "min"))) {
     int cmp, mins = arg[2] == 'm';
     unsigned long n;
-    time_t t = arg[1] == 'm' ? st->st_mtime : arg[1] == 'a' ? st->st_atime : st->st_ctime;
+    time_t t = arg[1] == 'm' ? find_st(w)->st_mtime : arg[1] == 'a' ? find_st(w)->st_atime : find_st(w)->st_ctime;
     long long age = (long long)find_now - (long long)t;
 
     (*i)++;
@@ -602,6 +600,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
   if(str_equal(arg, "-perm")) {
     char* s;
     unsigned long m;
+    mode_t mode;
     int kind;
 
     (*i)++;
@@ -618,7 +617,8 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
       return 0;
     }
 
-    return kind == 1 ? (st->st_mode & m) == m : kind == 2 ? (st->st_mode & m) != 0 || m == 0 : (st->st_mode & 07777) == m;
+    mode = find_st(w)->st_mode;
+    return kind == 1 ? (mode & m) == m : kind == 2 ? (mode & m) != 0 || m == 0 : (mode & 07777) == m;
   }
 
   /* -maxdepth/-mindepth were read up front; they are always true here */
@@ -657,8 +657,8 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct stat* st, i
 }
 
 static int
-eval_term(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action) {
-  int lhs = eval_primary(argv, i, end, path, st, has_action);
+eval_term(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
+  int lhs = eval_primary(argv, i, end, path, w, has_action);
   while(*i < end) {
     char* op = argv[*i];
     if(str_equal(op, "-o") || str_equal(op, "-or") || str_equal(op, ")"))
@@ -669,7 +669,7 @@ eval_term(char* argv[], int* i, int end, const char* path, struct stat* st, int*
     int rhs;
 
     find_dry += !lhs;
-    rhs = eval_primary(argv, i, end, path, st, has_action);
+    rhs = eval_primary(argv, i, end, path, w, has_action);
     find_dry -= !lhs;
     lhs = lhs && rhs;
   }
@@ -677,8 +677,8 @@ eval_term(char* argv[], int* i, int end, const char* path, struct stat* st, int*
 }
 
 static int
-eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int* has_action) {
-  int lhs = eval_term(argv, i, end, path, st, has_action);
+eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
+  int lhs = eval_term(argv, i, end, path, w, has_action);
   while(*i < end) {
     char* op = argv[*i];
     if(str_equal(op, "-o") || str_equal(op, "-or")) {
@@ -686,7 +686,7 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
       int rhs;
 
       find_dry += !!lhs;
-      rhs = eval_term(argv, i, end, path, st, has_action);
+      rhs = eval_term(argv, i, end, path, w, has_action);
       find_dry -= !!lhs;
       lhs = lhs || rhs;
     } else {
@@ -696,87 +696,66 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct stat* st, int*
   return lhs;
 }
 
-/* evaluates the expression for one file; prints the path when the expression has no action */
+/* evaluates the expression for the walk's current entry; prints the path when the expression has no action */
 static void
-find_visit(char* argv[], int expr_start, int expr_end, stralloc* path, struct stat* st, long depth) {
+find_visit(char* argv[], int expr_start, int expr_end, struct walk* w) {
   int i = expr_start, has_action = 0;
 
-  if(depth >= find_mindepth && eval_expr(argv, &i, expr_end, path->s, st, &has_action) && !has_action) {
-    buffer_putm_internal(fd_out->w, path->s, 0);
+  if(w->e.depth >= find_mindepth && eval_expr(argv, &i, expr_end, w->e.path, w, &has_action) && !has_action) {
+    buffer_putm_internal(fd_out->w, w->e.path, 0);
     buffer_putnlflush(fd_out->w);
   }
 }
 
+/* walks the tree below one operand; 'follow' is WALK_COMFOLLOW (-H), WALK_LOGICAL (-L) or 0 (-P).
+ * Returns 1 if anything could not be read.
+ * ----------------------------------------------------------------------- */
 static int
-find_recursive(char* argv[], int expr_start, int expr_end, stralloc* path, int deref_links, struct ancestor* anc, long depth) {
-  struct stat st;
-  struct ancestor current_anc;
+find_tree(char* argv[], int expr_start, int expr_end, const char* root, unsigned follow) {
+  struct walk w;
+  struct walk_ent* e;
+  size_t n = str_len(root);
   int ret = 0;
 
-  if(deref_links ? stat(path->s, &st) == -1 : lstat(path->s, &st) == -1) {
-    builtin_error(argv, path->s);
+  /* "link/" names the directory behind the link, as the kernel resolves it
+     (not for -delete: it must never reach through a link) */
+  if(!find_delete && n && root[n - 1] == '/')
+    follow |= WALK_COMFOLLOW;
+
+  if(walk_open(&w, root, follow | WALK_ERR | WALK_CYCLE | (find_depth ? WALK_POST : WALK_PRE) | (find_xdev ? WALK_XDEV : 0))) {
+    builtin_error(argv, (char*)root);
     return 1;
   }
 
-  if(depth == 0)
-    find_start_dev = st.st_dev;
+  w.maxdepth = (int)find_maxdepth;
 
-  current_anc.dev = st.st_dev;
-  current_anc.ino = st.st_ino;
-  current_anc.next = anc;
-
-  if(S_ISDIR(st.st_mode)) {
-    struct ancestor* p_anc = anc;
-    while(p_anc) {
-      if(p_anc->dev == st.st_dev && p_anc->ino == st.st_ino) {
-        buffer_putm_internal(fd_err->w, argv[0], ": file system loop detected '", path->s, "'", 0);
-        buffer_putnlflush(fd_err->w);
-        return 1;
-      }
-      p_anc = p_anc->next;
+  while((e = walk_read(&w))) {
+    if(e->phase == WALK_ERR) {
+      errno = e->err;
+      builtin_error(argv, (char*)e->path);
+      ret = 1;
+      continue;
     }
+
+    if(e->phase == WALK_CYCLE) {
+      buffer_putm_internal(fd_err->w, argv[0], ": file system loop detected '", e->path, "'", 0);
+      buffer_putnlflush(fd_err->w);
+      ret = 1;
+      continue;
+    }
+
+    find_prune = 0;
+    find_visit(argv, expr_start, expr_end, &w);
+
+    if(find_bad || find_quit)
+      break;
+
+    /* -prune does nothing under -depth: the directory is done by then */
+    if(find_prune && e->phase == WALK_PRE)
+      walk_skip(&w);
   }
 
-  find_prune = 0;
-
-  if(!find_depth)
-    find_visit(argv, expr_start, expr_end, path, &st, depth);
-
-  if(find_bad || find_quit)
-    return find_bad;
-
-  if(S_ISDIR(st.st_mode) && !(find_prune && !find_depth) && (find_maxdepth < 0 || depth < find_maxdepth) &&
-     !(find_xdev && st.st_dev != find_start_dev)) {
-    DIR* dp;
-    struct dirent* de;
-    size_t dirlen = path->len;
-
-    if(!(dp = opendir(path->s))) {
-      builtin_error(argv, path->s);
-      return 1;
-    }
-
-    while((de = readdir(dp))) {
-      if(str_equal(de->d_name, ".") || str_equal(de->d_name, ".."))
-        continue;
-
-      path_cat_sa(path, path->s, dirlen, de->d_name, str_len(de->d_name));
-
-      if(find_recursive(argv, expr_start, expr_end, path, 0, &current_anc, depth + 1))
-        ret = 1;
-
-      if(find_bad || find_quit)
-        break;
-    }
-
-    closedir(dp);
-    path->len = dirlen;
-    stralloc_nul(path);
-  }
-
-  if(find_depth && !find_bad && !find_quit)
-    find_visit(argv, expr_start, expr_end, path, &st, depth);
-
+  walk_close(&w);
   return find_bad ? 1 : ret;
 }
 
@@ -802,17 +781,18 @@ const char help_find[] = "    Search for files in a directory hierarchy.\n"
 
 int
 builtin_find(int argc, char* argv[]) {
-  int deref_links = 0;
+  unsigned follow = 0;
   int first = 1, expr_start;
-  stralloc path;
   int i, failed = 0;
 
   /* -H/-L/-P only when they are whole arguments: "-type" is an expression, not option letters */
   for(; argv[first]; first++) {
-    if(str_equal(argv[first], "-H") || str_equal(argv[first], "-P"))
-      deref_links = 0;
+    if(str_equal(argv[first], "-P"))
+      follow = 0;
+    else if(str_equal(argv[first], "-H"))
+      follow = WALK_COMFOLLOW;
     else if(str_equal(argv[first], "-L"))
-      deref_links = 1;
+      follow = WALK_LOGICAL;
     else
       break;
   }
@@ -825,7 +805,7 @@ builtin_find(int argc, char* argv[]) {
   }
 
   find_dry = find_bad = find_failed = find_prune = find_quit = 0;
-  find_depth = find_xdev = find_ere = 0;
+  find_depth = find_xdev = find_ere = find_delete = 0;
   find_maxdepth = -1;
   find_mindepth = 0;
   find_nbatches = 0;
@@ -841,32 +821,31 @@ builtin_find(int argc, char* argv[]) {
     else if(i + 1 < argc && str_equal(argv[i], "-mindepth") && scan_ulong(argv[i + 1], &v) > 0)
       find_mindepth = (long)v;
     else if(str_equal(argv[i], "-depth") || str_equal(argv[i], "-delete"))
-      find_depth = 1;
+      find_depth = 1, find_delete |= str_equal(argv[i], "-delete");
     else if(str_equal(argv[i], "-xdev") || str_equal(argv[i], "-mount"))
       find_xdev = 1;
     else if(i + 1 < argc && str_equal(argv[i], "-regextype"))
       find_ere = str_equal(argv[i + 1], "posix-extended") || str_equal(argv[i + 1], "egrep") || str_equal(argv[i + 1], "extended");
   }
 
-  stralloc_init(&path);
+  /* -delete removes what the walk reaches: a followed symlink would put the
+     files behind it in reach too */
+  if(find_delete && follow) {
+    builtin_errmsg(argv, "-delete", "cannot be combined with -H or -L");
+    return 1;
+  }
 
   if(expr_start == first) {
-    stralloc_copys(&path, ".");
-    stralloc_nul(&path);
-    if(find_recursive(argv, first, argc, &path, deref_links, NULL, 0))
+    if(find_tree(argv, first, argc, ".", follow))
       failed = 1;
   } else {
-    for(i = first; i < expr_start && !find_quit; i++) {
-      stralloc_copys(&path, argv[i]);
-      stralloc_nul(&path);
-      if(find_recursive(argv, expr_start, argc, &path, deref_links, NULL, 0))
+    for(i = first; i < expr_start && !find_quit; i++)
+      if(find_tree(argv, expr_start, argc, argv[i], follow))
         failed = 1;
-    }
   }
 
   find_flush_all(argv);
   find_regex_free();
-  stralloc_free(&path);
   return failed || find_failed;
 }
 #endif /* BUILTIN_FIND */

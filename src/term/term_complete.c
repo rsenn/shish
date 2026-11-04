@@ -6,15 +6,15 @@
 #include "../expand.h"
 #include "../../lib/str.h"
 #include "../../lib/alloc.h"
+#include "../../lib/arena.h"
+#include "../../lib/dirlist.h"
 #include "../../lib/windoze.h"
 
-#if !WINDOWS_NATIVE
-#include <dirent.h>
 #include <sys/stat.h>
+#if !WINDOWS_NATIVE
 #include <sys/ioctl.h>
 #endif
 
-#if !WINDOWS_NATIVE
 /* reprints "prompt + current cmdline" from scratch (used after the
  * match listing below has scribbled a block of text underneath the
  * in-progress line) and repositions the cursor back where it was --
@@ -93,6 +93,7 @@ term_complete_is_command(unsigned long start) {
 
 /* adds 'name' to the candidate list unless already there, narrowing the
  * common prefix; a candidate that does not start with 'base' is ignored.
+ * The list keeps the pointer: 'name' must stay valid until the list is dropped.
  *
  *   const char*  name    candidate
  *   stralloc*    base    prefix typed so far
@@ -133,7 +134,7 @@ term_complete_add(const char* name,
     *names = alloc_re(*names, *nalloc * sizeof(char*));
   }
 
-  (*names)[*nmatch - 1] = str_dup(name);
+  (*names)[*nmatch - 1] = (char*)name;
 }
 
 /* prints the list of completion candidates in a multi-column layout,
@@ -194,7 +195,6 @@ term_complete_list(char** names, unsigned int nmatch) {
   buffer_flush(term_output);
   term_complete_redraw();
 }
-#endif
 
 /* minimal filename tab-completion; in command position (first word of a
  * simple command) also completes reserved words, builtins and functions.
@@ -214,12 +214,12 @@ term_complete_list(char** names, unsigned int nmatch) {
  * ----------------------------------------------------------------------- */
 void
 term_complete(void) {
-#if !WINDOWS_NATIVE
   unsigned long start, wlen, dlen, blen, i;
   const char *word, *slash, *bstart;
   stralloc dir, base, common, realdir;
-  DIR* dp;
-  struct dirent* de;
+  arena names_a;
+  struct dirlist dl;
+  const char* rec;
   unsigned int nmatch = 0;
   char** names = NULL;
   unsigned int nalloc = 0;
@@ -281,18 +281,16 @@ term_complete(void) {
 
   stralloc_nul(&realdir);
 
-  if((dp = opendir(realdir.s))) {
-    while((de = readdir(dp))) {
-      /* only offer dotfiles once the user has actually typed a leading
-         "." -- same convention every other shell's completion uses */
-      if(!base.len && de->d_name[0] == '.')
-        continue;
+  /* the names stay in this arena until the end, the candidate list points into it */
+  arena_init(&names_a, &arena_heap, 0);
 
-      term_complete_add(de->d_name, &base, &common, &names, &nmatch, &nalloc);
-    }
+  /* only offer dotfiles once the user has actually typed a leading
+     "." -- same convention every other shell's completion uses */
+  dl = dirlist_read(&names_a, realdir.s, base.len ? DIRLIST_DOTS : DIRLIST_NOHIDDEN);
 
-    closedir(dp);
-  }
+  if(dl.s)
+    dirlist_foreach(rec, dl)
+      term_complete_add(dirlist_name(rec), &base, &common, &names, &nmatch, &nalloc);
 
   nfile = nmatch;
 
@@ -349,15 +347,12 @@ term_complete(void) {
     term_complete_list(names, nmatch);
   }
 
-  for(i = 0; i < nmatch; i++)
-    alloc_free(names[i]);
-
   alloc_free(names);
+  arena_free(&names_a);
 
 done:
   stralloc_free(&dir);
   stralloc_free(&base);
   stralloc_free(&common);
   stralloc_free(&realdir);
-#endif
 }

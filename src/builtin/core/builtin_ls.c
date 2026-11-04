@@ -7,8 +7,9 @@
 #include "../../../lib/path.h"
 #include "../../../lib/uint64.h"
 #include "../../../lib/shell.h"
-#include "../../../lib/stralloc.h"
 #include "../../../lib/alloc.h"
+#include "../../../lib/arena.h"
+#include "../../../lib/dirlist.h"
 #include "../../../lib/fmt.h"
 #include "../../../lib/scan.h"
 #include "../../../lib/unix.h"
@@ -16,7 +17,6 @@
 #include "../../fdtable.h"
 #include "../../var.h"
 #include "config.h"
-#include <dirent.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -65,14 +65,18 @@ struct ls_opts {
   unsigned color : 1;      /* --color: names in SGR colours */
 };
 
-/* one directory entry plus what lstat() said about it */
+/* one directory entry plus what lstat() said about it (zeroes when no option needs it) */
 struct ls_ent {
   char* name;
   char* path;
   struct stat st;
+  unsigned dir : 1; /* a directory: what -R descends into */
 };
 
 static struct ls_opts ls_o;
+
+/* names, paths, entries: everything of a run; a directory's share is rewound when it is done */
+static arena ls_a;
 
 /* the time -t sorts by and -l shows: mtime, or ctime (-c) or atime (-u) */
 static time_t
@@ -462,18 +466,6 @@ ls_columns(const struct ls_ent* v, unsigned int n) {
   alloc_free(w);
 }
 
-static void
-ls_free(struct ls_ent* v, unsigned int n) {
-  unsigned int i;
-
-  for(i = 0; i < n; i++) {
-    alloc_free(v[i].name);
-    alloc_free(v[i].path);
-  }
-
-  alloc_free(v);
-}
-
 /* prints sorted entries, preceded by "total N" (512-byte blocks) in a directory listing
  * with -l.
  * ----------------------------------------------------------------------- */
@@ -531,47 +523,81 @@ ls_show(struct ls_ent* v, unsigned int n, int in_dir) {
     ls_print(&v[i]);
 }
 
-/* builds an entry for "dir/name" (or just "name"); 0 when lstat() fails, reported on stderr */
+/* names "dir/name" (or just "name"); the name is kept as it is, the path is built in the arena */
 static int
-ls_stat(char* argv[], struct ls_ent* e, const char* dir, const char* name) {
-  stralloc full;
+ls_name(struct ls_ent* e, const char* dir, const char* name) {
+  size_t need;
 
-  stralloc_init(&full);
+  e->name = (char*)name;
+  e->path = (char*)name;
 
-  if(dir) {
-    path_cat_sa(&full, dir, str_len(dir), name, str_len(name));
-  } else {
-    stralloc_copys(&full, name);
-  }
+  if(!dir)
+    return 1;
 
-  stralloc_nul(&full);
-  e->name = str_dup(name);
-  e->path = str_dup(full.s);
-  stralloc_free(&full);
+  need = path_cat(0, 0, dir, str_len(dir), name, str_len(name));
 
-  if((ls_o.follow_all || (ls_o.follow_cmd && !dir)) && stat(e->path, &e->st) == 0) {
+  if(!(e->path = arena_alloc(&ls_a, need + 1, 1)))
+    return 0;
+
+  path_cat(e->path, need + 1, dir, str_len(dir), name, str_len(name));
+  return 1;
+}
+
+/* does any option look at more than the name? */
+static int
+ls_needstat(void) {
+  return ls_o.long_fmt || ls_o.blocks || ls_o.inode || ls_o.by_time || ls_o.by_size || ls_o.slash || ls_o.classify ||
+         ls_o.color || ls_o.follow_all;
+}
+
+/* lstat()s (or stat()s, with -L, and -H for an operand) the entry; 0 when that fails, reported on stderr */
+static int
+ls_stat(char* argv[], struct ls_ent* e, int operand) {
+  if((ls_o.follow_all || (ls_o.follow_cmd && operand)) && stat(e->path, &e->st) == 0) {
     /* followed */
   } else if(lstat(e->path, &e->st) == -1) {
     builtin_error(argv, e->path);
-    alloc_free(e->name);
-    alloc_free(e->path);
     return 0;
   }
 
+  e->dir = S_ISDIR(e->st.st_mode);
+  return 1;
+}
+
+/* the entry for record rec of directory dir: stat()ed only if an option wants more than the
+ * name, or the directory did not say what it is; 0 when that fails
+ * ----------------------------------------------------------------------- */
+static int
+ls_entry(char* argv[], struct ls_ent* e, const char* dir, const char* rec) {
+  int type = dirlist_type(rec);
+
+  if(!ls_name(e, dir, dirlist_name(rec)))
+    return 0;
+
+  if(ls_needstat() || type == DL_UNKNOWN)
+    return ls_stat(argv, e, 0);
+
+  e->dir = type == DL_DIR;
   return 1;
 }
 
 /* lists one directory; with -R then descends into each subdirectory, headed "path:" */
 static int
 ls_dir(char* argv[], const char* path, int header) {
-  DIR* dp;
-  struct dirent* de;
-  struct ls_ent* v = NULL;
-  unsigned int n = 0, nalloc = 0, i;
+  arena_pos pos = arena_tell(&ls_a);
+  struct dirlist d = dirlist_read(&ls_a, path, ls_o.all ? DIRLIST_DOTS : ls_o.almost ? 0 : DIRLIST_NOHIDDEN);
+  struct ls_ent* v;
+  const char* p;
+  unsigned int n = 0, i;
   int ret = 0;
 
-  if(!(dp = opendir(path)))
+  if(!d.s)
     return builtin_error(argv, (char*)path);
+
+  if(!(v = arena_newn(&ls_a, struct ls_ent, d.n + 1))) {
+    arena_rewind(&ls_a, pos);
+    return builtin_error(argv, (char*)path);
+  }
 
   if(header) {
     buffer_puts(fd_out->w, path);
@@ -579,36 +605,25 @@ ls_dir(char* argv[], const char* path, int header) {
     buffer_putnlflush(fd_out->w);
   }
 
-  while((de = readdir(dp))) {
-    int dot = !str_diff(de->d_name, ".") || !str_diff(de->d_name, "..");
-
-    if(dot ? !ls_o.all : (!ls_o.all && !ls_o.almost && de->d_name[0] == '.'))
-      continue;
-
-    if(n >= nalloc) {
-      nalloc = nalloc ? nalloc * 2 : 16;
-      v = alloc_re(v, nalloc * sizeof(*v));
-    }
-
-    if(ls_stat(argv, &v[n], path, de->d_name))
+  dirlist_foreach(p, d) {
+    if(ls_entry(argv, &v[n], path, p))
       n++;
     else
       ret = 1;
   }
 
-  closedir(dp);
   ls_show(v, n, 1);
 
   if(ls_o.recurse)
     for(i = 0; i < n; i++)
-      if(S_ISDIR(v[i].st.st_mode) && str_diff(v[i].name, ".") && str_diff(v[i].name, "..")) {
+      if(v[i].dir && str_diff(v[i].name, ".") && str_diff(v[i].name, "..")) {
         buffer_putnlflush(fd_out->w);
 
         if(ls_dir(argv, v[i].path, 1))
           ret = 1;
       }
 
-  ls_free(v, n);
+  arena_rewind(&ls_a, pos);
   return ret;
 }
 
@@ -649,7 +664,7 @@ builtin_ls(int argc, char* argv[]) {
   int c, ret = 0, nargs, i;
   char* single_dot[] = {".", NULL};
   char** args;
-  struct ls_ent *files = NULL, *dirs = NULL;
+  struct ls_ent *files, *dirs;
   unsigned int nfiles = 0, ndirs = 0, j;
 
   byte_zero(&ls_o, sizeof(ls_o));
@@ -710,14 +725,20 @@ builtin_ls(int argc, char* argv[]) {
 
   /* POSIX: every non-directory operand first, then each directory; a symlink to a
      directory is a directory unless -l (or -d) asks about the link itself */
-  files = alloc_zero(nargs * sizeof(*files));
-  dirs = alloc_zero(nargs * sizeof(*dirs));
+  arena_init(&ls_a, &arena_heap, 0);
+  files = arena_newn(&ls_a, struct ls_ent, nargs);
+  dirs = arena_newn(&ls_a, struct ls_ent, nargs);
+
+  if(!files || !dirs) {
+    arena_free(&ls_a);
+    return builtin_error(argv, argv[0]);
+  }
 
   for(i = 0; i < nargs; i++) {
     struct ls_ent e;
     struct stat st;
 
-    if(!ls_stat(argv, &e, NULL, args[i])) {
+    if(!ls_name(&e, NULL, args[i]) || !ls_stat(argv, &e, 1)) {
       ret = 1;
       continue;
     }
@@ -741,8 +762,7 @@ builtin_ls(int argc, char* argv[]) {
       ret = 1;
   }
 
-  ls_free(files, nfiles);
-  ls_free(dirs, ndirs);
+  arena_free(&ls_a);
   return ret;
 }
 #endif /* BUILTIN_LS */
