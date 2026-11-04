@@ -1,2 +1,0 @@
-/tmp/tmp.kUnR9GS3AY/run.sh:1:2: mycc: No such file or directory
--Wno-dev -G CodeLite - Unix Makefiles -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=mycc -DCMAKE_CXX_COMPILER=mycxx -DCMAKE_TOOLCHAIN_FILE=/tmp/tmp.kUnR9GS3AY/tc.cmake ../../../home/roman/Sources/shish/tests
