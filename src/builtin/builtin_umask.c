@@ -115,7 +115,7 @@ scan_umask(char* in, uint16* umask) {
       else if(op == '-')
         perms &= ~bits;
       else
-        perms = perms & ~who | bits;
+        perms = (perms & (~who)) | bits;
     }
 
     if(*src == ',')

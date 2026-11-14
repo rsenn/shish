@@ -1,7 +1,9 @@
-/* lib/path/internal.h: private helpers of lib/path/*.c; nothing outside lib/path/ includes it.
- * Every macro takes a view (p, n), never reads past n, and evaluates its arguments more than
- * once: pass plain lvalues. Upper-case and without the path_ prefix, so a private name never
- * collides with the public path_* functions of ../path.h.
+/* lib/path/internal.h: private helpers of lib/path/<function>.c; nothing
+ * outside lib/path/ includes it. Every macro takes a view (p, n), never
+ * reads past n, and evaluates its arguments more than once: 
+ * pass plain lvalues. 
+ * Upper-case and without the path_ prefix, so a private name never collides
+ * with the public path_* functions of ../path.h.
  *
  *   SEP(c)                  c is a separator ('/', also '\\' on WINDOWS)
  *   SEPCHARS, NSEP          the separator set as a string, and its length

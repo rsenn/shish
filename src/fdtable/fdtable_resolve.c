@@ -125,7 +125,7 @@ fdtable_resolve_1(struct fd* d, int flags) {
     TRACE(TRACE_FDTABLE,
           "resolve",
           trace_fd("fd", d),
-          trace_flags("flags", flags, resolve_flags, 5),
+          trace_flags("flags", flags, (const char*[]){"LAZY", "MOVE", "FORCE", "NOCLOSE", "CLOSE"}, 5),
           trace_raw("state", resolve_state[-state]));
   }
 

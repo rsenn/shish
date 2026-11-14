@@ -26,7 +26,6 @@ int
 builtin_help(int argc, char* argv[]) {
   size_t i, maxlen[2] = {0, 0};
   unsigned int cols;
-  const char* vcols;
 
   /* "help command": look up one builtin by name (regardless of its
      B_SPECIAL/B_DEFAULT/B_EXEC class) and print its full synopsis

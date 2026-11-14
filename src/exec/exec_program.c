@@ -50,13 +50,12 @@ exec_program(char* path, char** argv, enum execflag flag) {
      to the "if" block let the compiler treat that as a use-after-scope
      even though the child's use was intentional. */
   struct fdstack io;
-  static const char* const execflag_names[] = {"X_EXEC", "X_NOWAIT"};
 
   TRACE(TRACE_EXEC,
         "program",
         trace_str("path", path),
         trace_argv("argv", argv),
-        trace_flags("flag", flag, execflag_names, 2),
+        trace_flags("flag", flag, EXECFLAG_NAMES, 2),
         trace_raw("fork", (!(flag & X_EXEC) || sh->parent) ? "yes" : "no"));
 
   /* if we're gonna execve() a program and 'exec' isn't

@@ -31,8 +31,6 @@ static int failed;
 
 int
 main(void) {
-  int result;
-  char* s;
   size_t len;
   stralloc sa;
   stralloc_init(&sa);

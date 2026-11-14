@@ -53,7 +53,7 @@ date_format(stralloc* out, const char* fmt, const struct tm* tm) {
 int
 builtin_date(int argc, char* argv[]) {
   int c, utc = 0, colon = 0;
-  char *date_arg = 0, *ref_arg = 0; const char *iso = 0, *rfc3339 = 0, *fmt = "%a %b %e %H:%M:%S %Z %Y", *tz;
+  char *date_arg = 0, *ref_arg = 0; const char *iso = 0, *rfc3339 = 0, *fmt = "%a %b %e %H:%M:%S %Z %Y";
   char* oldtz = 0;
   time_t now;
   struct tm* tm;

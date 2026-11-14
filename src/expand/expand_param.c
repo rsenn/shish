@@ -23,11 +23,6 @@ struct range {
   int32_t length;
 };
 
-static inline int
-clamp(int value, int from, int to) {
-  return value < from ? from : value > to ? to : value;
-}
-
 /* ${v:offset:length} clipped to [from, to]: a negative offset counts from
  * the end, a negative length stops that far before the end, INT32_MAX
  * (no length given) runs to the end

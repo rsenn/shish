@@ -87,18 +87,11 @@ sh_loop(void) {
     }
 
     if(list) {
-      int status;
       struct eval e;
 
       TRACE(TRACE_SH, "loop.list", trace_int("n", tree_count(list)), trace_nodes("cmds", list));
 
       tree_catlist(list, &cmd, NULL);
-
-      /*      if(sh->opts.xtrace) {
-              buffer_puts(fd_err->w, "%% ");
-              buffer_putsa(fd_err->w, &cmd);
-              buffer_putnlflush(fd_err->w);
-            }*/
 
       if(is_interactive)
         history_add(cmd.s, cmd.len);
@@ -113,7 +106,7 @@ sh_loop(void) {
         int under_source = eval && (eval->flags & E_SOURCE);
 
         eval_push(&e, E_JCTL);
-        status = eval_tree(&e, list, E_ROOT | E_LIST | (under_source ? E_EVAL : 0));
+        eval_tree(&e, list, E_ROOT | E_LIST | (under_source ? E_EVAL : 0));
 
         sh->exitcode = eval_pop(&e);
       }

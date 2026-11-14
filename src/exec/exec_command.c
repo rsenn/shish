@@ -42,7 +42,6 @@ int exec_via_command; /* run by "command": a special builtin's error does not ex
 int
 exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
   int ret = 1;
-  static const char* const execflag_names[] = {"X_EXEC", "X_NOWAIT"};
 
   TRACE(TRACE_EXEC,
         "command",
@@ -51,7 +50,7 @@ exec_command(struct command* cmd, int argc, char** argv, enum execflag flag) {
         trace_str("path", cmd->id == H_PROGRAM ? cmd->path : NULL),
         trace_int("argc", argc),
         trace_argv("argv", argv),
-        trace_flags("flag", flag, execflag_names, 2));
+        trace_flags("flag", flag, EXECFLAG_NAMES, 2));
 
   /* H_PROGRAM handles X_NOWAIT itself below (exec_program() forks and
      registers the job); every other kind (builtin, special builtin,

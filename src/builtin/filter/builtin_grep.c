@@ -90,12 +90,6 @@ grep_equal_i(const char* a, const char* b, size_t n) {
   return 1;
 }
 
-/* -f: appends the file's bytes to the -e patterns */
-static void
-grep_pat_sink(void* ctx, const char* p, size_t n) {
-  stralloc_catb(&((struct grep*)ctx)->epat, p, n);
-}
-
 /* -F: does any '\n'-separated string of the pattern occur in line? "" matches everything */
 static int
 grep_test_fixed(const char* pat, const char* line, size_t len, int whole, int icase) {

@@ -16,7 +16,6 @@ tree_catlist(union node* node, stralloc* sa, const char* sep) {
  * ----------------------------------------------------------------------- */
 void
 tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
-  size_t i = 0;
   stralloc next;
 
   /* an empty case statement ("case x in esac") has a NULL
@@ -30,8 +29,6 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
   stralloc_init(&next);
 
   do {
-    size_t line_start, add_len, line_len;
-
     stralloc_zero(&next);
     tree_cat_n(node, &next, depth);
     stralloc_nul(&next);
@@ -41,14 +38,13 @@ tree_catlist_n(union node* node, stralloc* sa, const char* sep, int depth) {
       stralloc_cats(&next, " &");
 
     if(node->next) {
-      if(sep /*&& *sep*/)
+      if(sep)
         tree_catseparator(&next, tree_isbgnd(node) && *sep == ';' ? sep + 1 : sep, depth);
       else
         stralloc_cats(&next, tree_isbgnd(node) ? " " : "; ");
     }
 
     stralloc_cat(sa, &next);
-    i++;
   } while((node = node->next));
 
   stralloc_free(&next);

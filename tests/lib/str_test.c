@@ -5,7 +5,7 @@
 
 static int failed;
 
-static int check(int ok, const char* what) { 
+static void check(int ok, const char* what) { 
   printf("%s: %s\n", what, ok ? "OK" : "FAIL"); 
   failed |= !ok;
 }

@@ -4,8 +4,6 @@
 
 void
 job_update(void) {
-  struct job *j, *next;
-
   if(job_signaled) {
     TRACE(TRACE_JOB, "update");
     TRACE(TRACE_SIG, "block", trace_int("sig", SIGCHLD));
@@ -17,7 +15,7 @@ job_update(void) {
     {
       int n = 0;
 
-      for(j = job_list; j; j = j->next)
+      for(struct job* j = job_list; j; j = j->next)
         n++;
 
       TRACE(TRACE_JOB, "table", trace_int("njobs", n));

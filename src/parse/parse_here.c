@@ -9,7 +9,6 @@
 int
 parse_here(struct parser* p, stralloc* delim, int nosubst, int strip) {
   int r = 0;
-  union node* n;
 
   /* if there is still a tree from the last call then remove it */
   if(p->tree)

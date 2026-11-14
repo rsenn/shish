@@ -11,10 +11,6 @@
 union node*
 parse_simple_command(struct parser* p) {
   union node **aptr, *args, **vptr, *vars, **rptr, *rdir, *simple_command;
-  size_t n = 0;
-  struct location pos;
-
-  pos = p->tokstart;
 
   tree_init(args, aptr);
   tree_init(vars, vptr);
@@ -60,7 +56,6 @@ parse_simple_command(struct parser* p) {
        scan for keywords because a simple command
        ends with a control operator */
     p->flags &= ~P_SKIPNL;
-    n++;
   }
 
 addcmd:

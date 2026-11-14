@@ -16,10 +16,8 @@ int sh_child = 0;
  * ----------------------------------------------------------------------- */
 int
 sh_forked(void) {
-  struct env* e = sh;
-  struct env* next;
+  struct env* e = sh, *next;
   char** keep_argv = e->arg.v;
-  int old_pid = sh_pid;
 
   /* if we're not in the root environment we clean up any shell env */
   for(sh = sh->parent; sh; sh = next) {

@@ -33,12 +33,10 @@ var_dump(struct var* var) {
     buffer_putc(fd_out->w, '"');
 
     if(n) {
-      unsigned int i, l, rl, rn;
-      rn = var->sa.len - var->offset;
-      rl = (rn > width ? (width - 3) : rn);
-      l = (n > width ? (width - 3) : n);
+      unsigned int rn = var->sa.len - var->offset;
+      unsigned int rl = (rn > width ? (width - 3) : rn);
 
-      for(i = 0; i < rl; i++) {
+      for(unsigned int i = 0; i < rl; i++) {
         if(var->sa.s[var->offset + i] != '\n' && var->sa.s[var->offset + i] != '\t')
           buffer_put(fd_out->w, &var->sa.s[var->offset + i], 1);
         else
@@ -48,11 +46,12 @@ var_dump(struct var* var) {
       if(rl < rn) {
         buffer_puts(fd_out->w, "...");
         rl += 3;
-        l += 3;
       }
+
       n = width - rl;
     } else
       n = width;
+
     buffer_putc(fd_out->w, '"');
   }
 

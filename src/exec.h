@@ -9,6 +9,8 @@ enum hash { H_PROGRAM = 0, H_EXEC = 1, H_SBUILTIN = 2, H_BUILTIN = 4, H_FUNCTION
 
 enum execflag { X_EXEC = 1, X_NOWAIT = 2 };
 
+#define EXECFLAG_NAMES (const char*[]){"X_EXEC", "X_NOWAIT"}
+
 static inline const char*
 exec_kind_name(enum hash id) {
   switch(id) {

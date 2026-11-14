@@ -27,8 +27,8 @@ struct fd;
 
 extern stralloc term_cmdline;
 extern buffer term_input;
-extern int term_insert;
-extern int term_dumb;
+extern unsigned term_insert;
+extern unsigned term_dumb;
 extern unsigned long term_pos;
 extern buffer* term_output;
 /* set only while term_read() is blocked at the prompt: sh_onsig()'s SIGCHLD handler redraws the

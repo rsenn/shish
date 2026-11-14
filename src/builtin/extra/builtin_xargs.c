@@ -70,7 +70,6 @@ execute_batch(struct args util, struct args items, struct xargs_opts opts) {
 
   int argc = util.c + items.c;
   char** argv;
-  pid_t pid;
 
   if(!(argv = alloc((argc + 1) * sizeof(char*))))
     return 1;

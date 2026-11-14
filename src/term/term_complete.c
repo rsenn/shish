@@ -350,7 +350,6 @@ term_complete(void) {
   alloc_free(names);
   arena_free(&names_a);
 
-done:
   stralloc_free(&dir);
   stralloc_free(&base);
   stralloc_free(&common);

@@ -161,7 +161,7 @@ const char help_read[] = "    Read a line and split it into variables.\n"
 
 int
 builtin_read(int argc, char* argv[]) {
-  int c, raw = 0, silent = 0, fd = 0, num_args, index;
+  int c, raw = 0, silent = 0, fd = 0, num_args;
   char** argp;
   const char* prompt = 0;
   stralloc data;
@@ -173,6 +173,7 @@ builtin_read(int argc, char* argv[]) {
         p.delim = shell_optarg;
         p.ndelim = str_len(p.delim);
         break;
+
       case 'N': p.delim = 0; p.ndelim = 0;
       case 'n': scan_int(shell_optarg, &p.nchars); break;
       case 'p': prompt = shell_optarg; break;
@@ -186,7 +187,7 @@ builtin_read(int argc, char* argv[]) {
   argp = &argv[shell_optind];
   num_args = argc - shell_optind;
 
-  for(index = 0; index < num_args; index++) {
+  for(int index = 0; index < num_args; index++) {
     if(!var_valid(argp[index])) {
       builtin_errmsg(argv, argp[index], "not a valid identifier");
       return 1;
@@ -200,11 +201,9 @@ builtin_read(int argc, char* argv[]) {
     int ret, status = 0;
     const char* ifs;
     size_t len;
-    char *ptr, *end;
-    index = 0;
     struct termios attrs;
     buffer* input = fdtable[fd]->r;
-
+    
     stralloc_init(&data);
 
     if(silent)
@@ -219,9 +218,8 @@ builtin_read(int argc, char* argv[]) {
         stralloc_trimr(&data, "\r\n", 2);
       else if(p.delim && p.ndelim > 0)
         stralloc_trimr(&data, p.delim, p.ndelim);
-    } else {
+    } else 
       status = 1;
-    }
 
     if(silent)
       term_restore(input->fd, &attrs);
@@ -239,9 +237,9 @@ builtin_read(int argc, char* argv[]) {
         break;
 
       data.len--;
+
       {
         stralloc more;
-
         stralloc_init(&more);
 
         if(buffer_get_token_sa_pred(input, &more, predicate_function, &p) > 0) {

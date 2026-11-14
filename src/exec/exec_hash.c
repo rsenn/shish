@@ -52,7 +52,9 @@ struct command
 exec_hash(char* name, int mask) {
   struct command cmd = {0, {0}};
   const char* path = var_value("PATH", NULL);
-  const char* how = "search";
+#ifdef DEBUG_OUTPUT
+ const char* how = "search";
+#endif
 
   if(!exec_hash_path_seen || str_diff(exec_hash_path_seen, path ? path : "")) {
     exec_hash_invalidate_all();
@@ -63,7 +65,9 @@ exec_hash(char* name, int mask) {
   /* name contains slashes, its a path */
   if(!path_isname(name, str_len(name))) {
     /* do not hash this... */
+#ifdef DEBUG_OUTPUT
     how = "path";
+#endif
     cmd.id = H_PROGRAM;
     cmd.path = name;
 
@@ -106,16 +110,18 @@ exec_hash(char* name, int mask) {
        access(entry->cmd.path, X_OK) != 0)
       entry->mask = -1;
 
+#ifdef DEBUG_OUTPUT
     how = entry && entry->mask == mask ? "hit" : "miss";
+#endif
 
-    if(!entry || entry->mask != mask) {
-      /* if we don't have a cache hit we're gonna search, special builtins first */
+    /* if we don't have a cache hit we're gonna search, special builtins first */
+    if(!entry || entry->mask != mask) 
       cmd = exec_search(name, mask);
-    }
 
     if(entry && entry->mask != mask) {
       if(entry->cmd.id == H_PROGRAM)
         alloc_free(entry->cmd.path);
+
       entry->hits = 1;
     }
 
