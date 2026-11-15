@@ -11,6 +11,7 @@
 union node*
 parse_simple_command(struct parser* p) {
   union node **aptr, *args, **vptr, *vars, **rptr, *rdir, *simple_command;
+  struct location pos = p->tokstart;
 
   tree_init(args, aptr);
   tree_init(vars, vptr);
