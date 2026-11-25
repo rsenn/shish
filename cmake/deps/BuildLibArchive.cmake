@@ -1,7 +1,7 @@
 # Emscripten: CMake's check_type_size() reads the sizes back out of a compiled .js file and gets 7 for every
 # type; the sub-builds of lzo2 and libarchive use cmake/emscripten/CheckTypeSize.cmake instead.
 if(EMSCRIPTEN)
-  set(EMSCRIPTEN_MODULE_PATH_ARGS "-DCMAKE_MODULE_PATH:PATH=${CMAKE_CURRENT_LIST_DIR}/emscripten")
+  set(EMSCRIPTEN_MODULE_PATH_ARGS "-DCMAKE_MODULE_PATH:PATH=${CMAKE_CURRENT_LIST_DIR}/../emscripten")
 else()
   set(EMSCRIPTEN_MODULE_PATH_ARGS "")
 endif()
@@ -59,16 +59,23 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     find_lzo2()
   endif()
 
-  if(LIBARCHIVE_GZIP AND NOT DEFINED ZLIB_FOUND)
-    find_zlib()
-  endif()
-
   if(LIBARCHIVE_ZSTD AND NOT DEFINED ZSTD_FOUND)
     find_zstd()
   endif()
 
   set(LIBARCHIVE_DEPS_${SUFFIX} "")
-  set(LIBARCHIVE_DEP_ARGS_${SUFFIX} "")
+  # the module link line carries the codecs only: leave out what libarchive would pick up from the host
+  set(LIBARCHIVE_DEP_ARGS_${SUFFIX}
+      "-DENABLE_ACL:BOOL=OFF"
+      "-DENABLE_XATTR:BOOL=OFF"
+      "-DENABLE_OPENSSL:BOOL=OFF"
+      "-DENABLE_NETTLE:BOOL=OFF"
+      "-DENABLE_MBEDTLS:BOOL=OFF"
+      "-DENABLE_LIBXML2:BOOL=OFF"
+      "-DENABLE_EXPAT:BOOL=OFF"
+      "-DENABLE_ICONV:BOOL=OFF"
+      "-DENABLE_PCREPOSIX:BOOL=OFF"
+      "-DENABLE_PCRE2POSIX:BOOL=OFF")
 
   if(NOT LIBARCHIVE_BZIP2)
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_BZip2:BOOL=OFF")
@@ -84,6 +91,12 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     list(APPEND LIBARCHIVE_DEPS_${SUFFIX} libb2_${SUFFIX})
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLIBB2_INCLUDE_DIR:PATH=${LIBB2_INCLUDE_DIR_${SUFFIX}}"
          "-DLIBB2_LIBRARY:FILEPATH=${LIBB2_LIBRARY_FILE_${SUFFIX}}")
+  endif()
+
+  # the detected "lzma" is a bare library name with no include directory, so libarchive's own probe
+  # finds the host liblzma.so and /usr/include/lzma.h and ends up without lzma (HAVE_LZMA_H unset)
+  if(LIBARCHIVE_LZMA AND LIBLZMA_FOUND AND (DIET OR HAVE_DIETLIBC))
+    set(LIBLZMA_FOUND FALSE)
   endif()
 
   if(NOT LIBARCHIVE_LZMA)
@@ -115,13 +128,16 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
 
   if(NOT LIBARCHIVE_GZIP)
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ZLIB:BOOL=OFF")
-  elseif(NOT ZLIB_FOUND)
-    build_zlib(${BINARY} ${SUFFIX} ${PIC})
-    list(APPEND LIBARCHIVE_DEPS_${SUFFIX} zlib_${SUFFIX})
-    # zlib installs a shared copy next to the static one, so FindZLIB must be told which to pick.
-    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DZLIB_INCLUDE_DIR:PATH=${ZLIB_INCLUDE_DIR_${SUFFIX}}"
-         "-DZLIB_LIBRARY:FILEPATH=${ZLIB_LIBRARY_FILE_${SUFFIX}}"
-         "-DZLIB_LIBRARY_RELEASE:FILEPATH=${ZLIB_LIBRARY_FILE_${SUFFIX}}")
+  else()
+    use_zlib(${BINARY} ${SUFFIX} ${PIC})
+
+    if(ZLIB_DEPENDS_${SUFFIX})
+      list(APPEND LIBARCHIVE_DEPS_${SUFFIX} ${ZLIB_DEPENDS_${SUFFIX}})
+      # zlib installs a shared copy next to the static one, so FindZLIB must be told which to pick.
+      list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DZLIB_INCLUDE_DIR:PATH=${ZLIB_INCLUDE_DIR_${SUFFIX}}"
+           "-DZLIB_LIBRARY:FILEPATH=${ZLIB_LIBRARY_FILE_${SUFFIX}}"
+           "-DZLIB_LIBRARY_RELEASE:FILEPATH=${ZLIB_LIBRARY_FILE_${SUFFIX}}")
+    endif()
   endif()
 
   if(NOT LIBARCHIVE_ZSTD)
@@ -142,23 +158,61 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
   endif()
 
   # emscripten, like WASI, has no ACLs, extended attributes or host crypto, and no tools are built
-  if(CMAKE_SYSTEM_NAME STREQUAL "WASI" OR EMSCRIPTEN)
+  if(EMSCRIPTEN)
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DENABLE_ACL:BOOL=OFF" "-DENABLE_XATTR:BOOL=OFF" "-DENABLE_NETTLE:BOOL=OFF"
          "-DENABLE_MBEDTLS:BOOL=OFF" "-DENABLE_PCRE2POSIX:BOOL=OFF" "-DENABLE_TAR:BOOL=OFF" "-DENABLE_CPIO:BOOL=OFF"
          "-DENABLE_CAT:BOOL=OFF" "-DENABLE_UNZIP:BOOL=OFF")
-  endif()
-
-  # emcc links with unresolved symbols, so CHECK_LIBRARY_EXISTS(md ...) passes for a library that is not there
-  if(EMSCRIPTEN)
+    # emcc links with unresolved symbols, so CHECK_LIBRARY_EXISTS(md ...) passes for a library that is not there
     list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DLIBMD_FOUND:INTERNAL=0")
   endif()
 
+  # WASI has no ACLs, extended attributes or host crypto, and no tools are built
   if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
-    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX}
-         # src/wasi/wasi_compat.h supplies these, so the link-only probes cannot see them
-         "-DHAVE_FCHDIR:INTERNAL=1" "-DHAVE_GETPWUID_R:INTERNAL=1" "-DHAVE_GETGRGID_R:INTERNAL=1")
-    set(LIBARCHIVE_C_FLAGS "-w -I${SOURCE}/src/wasi -include ${SOURCE}/src/wasi/wasi_compat.h -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_GETPID -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN")
-    list(APPEND LIBARCHIVE_DEP_ARGS_${SUFFIX} "-DCMAKE_EXE_LINKER_FLAGS:STRING=-lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks -lwasi-emulated-mman")
+    list(
+      APPEND
+      LIBARCHIVE_DEP_ARGS_${SUFFIX}
+      "-DENABLE_ACL:BOOL=OFF"
+      "-DENABLE_XATTR:BOOL=OFF"
+      "-DENABLE_NETTLE:BOOL=OFF"
+      "-DENABLE_MBEDTLS:BOOL=OFF"
+      "-DENABLE_PCRE2POSIX:BOOL=OFF"
+      "-DENABLE_TAR:BOOL=OFF"
+      "-DENABLE_CPIO:BOOL=OFF"
+      "-DENABLE_CAT:BOOL=OFF"
+      "-DENABLE_UNZIP:BOOL=OFF"
+      # src/wasi/wasi_compat.h supplies these, so the link-only probes cannot see them
+      "-DHAVE_FCHDIR:INTERNAL=1"
+      "-DHAVE_GETPWUID_R:INTERNAL=1"
+      "-DHAVE_GETGRGID_R:INTERNAL=1")
+    set(LIBARCHIVE_C_FLAGS
+        "-w -I${SOURCE}/src/wasi -include ${SOURCE}/src/wasi/wasi_compat.h -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_GETPID -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN"
+    )
+    list(
+      APPEND
+      LIBARCHIVE_DEP_ARGS_${SUFFIX}
+      "-DCMAKE_EXE_LINKER_FLAGS:STRING=-lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks -lwasi-emulated-mman"
+    )
+  endif()
+
+  # dietlibc has none of these: the probes find the glibc headers in /usr/include, and their
+  # linux/types.h typedefs break the probes that follow (conflicting types for __u64)
+  if(DIET OR HAVE_DIETLIBC)
+    list(
+      APPEND
+      LIBARCHIVE_DEP_ARGS_${SUFFIX}
+      "-DENABLE_ACL:BOOL=OFF"
+      "-DENABLE_XATTR:BOOL=OFF"
+      "-DENABLE_TAR:BOOL=OFF"
+      "-DENABLE_CPIO:BOOL=OFF"
+      "-DENABLE_CAT:BOOL=OFF"
+      "-DENABLE_UNZIP:BOOL=OFF"
+      "-DHAVE_ACL_LIBACL_H:INTERNAL=0"
+      "-DHAVE_ATTR_XATTR_H:INTERNAL=0"
+      "-DHAVE_SYS_ACL_H:INTERNAL=0"
+      "-DHAVE_EXT2FS_EXT2_FS_H:INTERNAL=0"
+      "-DHAVE_WORKING_EXT2_IOC_GETFLAGS:INTERNAL=0")
+    # fstatat(), linkat() and the other *at() calls are declared only under it
+    set(LIBARCHIVE_C_FLAGS "${LIBARCHIVE_C_FLAGS} -D_ATFILE_SOURCE=1")
   endif()
 
   ExternalProject_Add(
@@ -200,4 +254,4 @@ macro(build_libarchive SOURCE BINARY SUFFIX PIC)
     endif()
   endforeach(dep)
   set(LibArchive_INCLUDE_DIRS_${SUFFIX} "${SOURCE}/third_party/libarchive/libarchive")
-endmacro(build_libarchive)
+endmacro()

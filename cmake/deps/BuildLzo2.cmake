@@ -10,7 +10,8 @@ macro(build_lzo2 BINARY SUFFIX PIC)
 
   set(LZO2_PREFIX_${SUFFIX} "${BINARY}/deps-${SUFFIX}")
   set(LZO2_INCLUDE_DIR_${SUFFIX} "${LZO2_PREFIX_${SUFFIX}}/include")
-  set(LZO2_LIBRARY_FILE_${SUFFIX} "${LZO2_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lzo2${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(LZO2_LIBRARY_FILE_${SUFFIX}
+      "${LZO2_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lzo2${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
   # lzo's test programs call clock(), which WASI only emulates
   if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
@@ -20,11 +21,18 @@ macro(build_lzo2 BINARY SUFFIX PIC)
     set(LZO2_WASI_ARGS "-DCMAKE_C_FLAGS:STRING=-w")
   endif()
 
+  # dietlibc defines __noinline__ as a macro, which breaks __attribute__((__noinline__))
+  set(LZO2_PATCH_${SUFFIX})
+  if(DIET OR HAVE_DIETLIBC)
+    set(LZO2_PATCH_${SUFFIX} PATCH_COMMAND sed -i "s/__attribute__((__noinline__/__attribute__((noinline/" <SOURCE_DIR>/include/lzo/lzodefs.h)
+  endif()
+
   ExternalProject_Add(
     lzo2_${SUFFIX}
     URL https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
     DOWNLOAD_DIR ${BINARY}/downloads-${SUFFIX}
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    ${LZO2_PATCH_${SUFFIX}}
     BINARY_DIR ${BINARY}/lzo2-${SUFFIX}
     CMAKE_CACHE_ARGS
       "-DCMAKE_INSTALL_PREFIX:PATH=${LZO2_PREFIX_${SUFFIX}}"
@@ -40,4 +48,4 @@ macro(build_lzo2 BINARY SUFFIX PIC)
       "-DENABLE_SHARED:BOOL=OFF"
       ${EMSCRIPTEN_MODULE_PATH_ARGS}
     BUILD_BYPRODUCTS "${LZO2_LIBRARY_FILE_${SUFFIX}}")
-endmacro(build_lzo2)
+endmacro()

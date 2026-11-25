@@ -10,13 +10,19 @@ macro(build_liblzma BINARY SUFFIX PIC)
 
   set(LIBLZMA_PREFIX_${SUFFIX} "${BINARY}/deps-${SUFFIX}")
   set(LIBLZMA_INCLUDE_DIR_${SUFFIX} "${LIBLZMA_PREFIX_${SUFFIX}}/include")
-  set(LIBLZMA_LIBRARY_FILE_${SUFFIX} "${LIBLZMA_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lzma${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(LIBLZMA_LIBRARY_FILE_${SUFFIX}
+      "${LIBLZMA_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lzma${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
   # WASI has no threads or signal masks: liblzma builds single-threaded
   if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
     set(LIBLZMA_THREADS_ARG "-DXZ_THREADS:STRING=no")
   else()
     set(LIBLZMA_THREADS_ARG "")
+  endif()
+
+  # dietlibc's cdefs.h defines __leaf as a macro, which breaks gcc's cpuid.h: no CLMUL CRC there
+  if(DIET OR HAVE_DIETLIBC)
+    set(LIBLZMA_THREADS_ARG ${LIBLZMA_THREADS_ARG} "-DXZ_CLMUL_CRC:BOOL=OFF" "-DHAVE_CPUID_H:INTERNAL=0")
   endif()
 
   ExternalProject_Add(
@@ -47,4 +53,4 @@ macro(build_liblzma BINARY SUFFIX PIC)
       "-DXZ_TOOL_SCRIPTS:BOOL=OFF"
       "-DXZ_TOOL_SYMLINKS:BOOL=OFF"
     BUILD_BYPRODUCTS "${LIBLZMA_LIBRARY_FILE_${SUFFIX}}")
-endmacro(build_liblzma)
+endmacro()

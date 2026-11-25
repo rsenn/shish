@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_LIST_DIR}/FindZlib.cmake)
+
 # build_zlib(BINARY SUFFIX PIC)
 #
 # Downloads and builds zlib as a static library into ${BINARY}/deps-${SUFFIX}, once per
@@ -16,7 +18,19 @@ macro(build_zlib BINARY SUFFIX PIC)
   else()
     set(ZLIB_LIBRARY_NAME z)
   endif()
-  set(ZLIB_LIBRARY_FILE_${SUFFIX} "${ZLIB_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(ZLIB_LIBRARY_FILE_${SUFFIX}
+      "${ZLIB_PREFIX_${SUFFIX}}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+  # dietlibc cannot link a shared object: build and install the static library only
+  set(ZLIB_STATIC_ONLY_ARGS "")
+  if(DIET OR HAVE_DIETLIBC)
+    set(ZLIB_STATIC_ONLY_ARGS
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target zlibstatic
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${ZLIB_PREFIX_${SUFFIX}}/include ${ZLIB_PREFIX_${SUFFIX}}/lib
+        COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/zlib.h <BINARY_DIR>/zconf.h ${ZLIB_PREFIX_${SUFFIX}}/include
+        COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
+                ${ZLIB_PREFIX_${SUFFIX}}/lib)
+  endif()
 
   ExternalProject_Add(
     zlib_${SUFFIX}
@@ -35,5 +49,60 @@ macro(build_zlib BINARY SUFFIX PIC)
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=${PIC}"
       "-DZLIB_BUILD_EXAMPLES:BOOL=OFF"
+    ${ZLIB_STATIC_ONLY_ARGS}
     BUILD_BYPRODUCTS "${ZLIB_LIBRARY_FILE_${SUFFIX}}")
-endmacro(build_zlib)
+endmacro()
+
+# Registration with Deps.cmake: the installed zlib (-DZLIB_FOUND=FALSE ignores it), else build_zlib().
+include(${CMAKE_CURRENT_LIST_DIR}/../Deps.cmake)
+
+function(_zlib_find name suffix)
+  if(DEFINED ZLIB_FOUND AND NOT ZLIB_FOUND)
+    return()
+  endif()
+
+  find_zlib()
+
+  if(ZLIB_FOUND)
+    find_library(_zlib_library NAMES ${ZLIB_LIBRARY})
+    if(NOT _zlib_library)
+      set(_zlib_library "-l${ZLIB_LIBRARY}")
+    endif()
+    dep_provide(zlib ${suffix} SOURCE system ORIGIN "${_zlib_library}" INCLUDE_DIRS ${ZLIB_INCLUDE_DIR}
+                LIBRARIES "${_zlib_library}")
+  endif()
+endfunction()
+
+function(_zlib_build name suffix pic binary source)
+  build_zlib(${binary} ${suffix} ${pic})
+
+  dep_provide(zlib ${suffix} SOURCE built ORIGIN "${ZLIB_LIBRARY_FILE_${suffix}}" PREFIX "${binary}/deps-${suffix}"
+              INCLUDE_DIRS "${ZLIB_INCLUDE_DIR_${suffix}}" LIBRARIES "${ZLIB_LIBRARY_FILE_${suffix}}"
+              TARGETS zlib_${suffix})
+endfunction()
+
+dep_declare(zlib DESCRIPTION zlib FIND _zlib_find BUILD _zlib_build)
+
+# use_zlib(BINARY SUFFIX PIC)
+#
+# Resolves zlib for one SUFFIX through dep_resolve() and leaves the variables the scripts
+# that link zlib read: ZLIB_FOUND (an installed copy), ZLIB_INCLUDE_DIR_${SUFFIX} (empty:
+# the compiler's default), ZLIB_LIBRARIES_${SUFFIX}, ZLIB_DEPENDS_${SUFFIX} (the target to
+# add to DEPENDS, empty for an installed copy) and, for a built one, ZLIB_LIBRARY_FILE_${SUFFIX}.
+macro(use_zlib BINARY SUFFIX PIC)
+  dep_resolve(zlib SUFFIX ${SUFFIX} PIC ${PIC} BINARY ${BINARY} SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
+
+  dep_get(zlib ${SUFFIX} SOURCE _UZ_SOURCE)
+  dep_get(zlib ${SUFFIX} INCLUDE_DIRS ZLIB_INCLUDE_DIR_${SUFFIX})
+  dep_get(zlib ${SUFFIX} LIBRARIES ZLIB_LIBRARIES_${SUFFIX})
+
+  if("${_UZ_SOURCE}" STREQUAL "system")
+    set(ZLIB_FOUND TRUE)
+    set(ZLIB_LIBRARIES ${ZLIB_LIBRARIES_${SUFFIX}})
+    set(ZLIB_DEPENDS_${SUFFIX} "")
+  else()
+    set(ZLIB_FOUND FALSE)
+    set(ZLIB_LIBRARY_FILE_${SUFFIX} ${ZLIB_LIBRARIES_${SUFFIX}})
+    set(ZLIB_DEPENDS_${SUFFIX} zlib_${SUFFIX})
+  endif()
+endmacro()
