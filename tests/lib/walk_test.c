@@ -43,7 +43,7 @@ mkd(const char* rel) {
 }
 
 static void
-touch(const char* rel) {
+touch_file(const char* rel) {
   char p[1024];
   int fd;
 
@@ -173,9 +173,9 @@ test_tree(void) {
   mkd("t/a");
   mkd("t/a/sub");
   mkd("t/empty");
-  touch("t/a/f1");
-  touch("t/a/sub/f2");
-  touch("t/b");
+  touch_file("t/a/f1");
+  touch_file("t/a/sub/f2");
+  touch_file("t/b");
   path(p, "t");
 
   run(p, 0, -1, 0, 0);
@@ -232,8 +232,8 @@ test_errors(void) {
   mkd("u");
   mkd("u/locked");
   mkd("u/ok");
-  touch("u/locked/hidden");
-  touch("u/ok/x");
+  touch_file("u/locked/hidden");
+  touch_file("u/ok/x");
   path(p, "u/locked");
   chmod(p, 0);
   if(!access(p, R_OK)) {
@@ -257,12 +257,12 @@ test_symlinks(void) {
   char p[1024];
 
   mkd("outside");
-  touch("outside/precious");
+  touch_file("outside/precious");
   mkd("outside/deep");
-  touch("outside/deep/precious2");
+  touch_file("outside/deep/precious2");
   mkd("v");
   mkd("v/real");
-  touch("v/real/f");
+  touch_file("v/real/f");
   lnk("v/tooutside", "../outside");
   lnk("v/abs", root);
   lnk("v/up", "..");
@@ -463,7 +463,7 @@ test_kids(void) {
   /* at WALK_POST the directory is read afresh: a removed child is gone from it */
   mkd("k");
   mkd("k/d");
-  touch("k/d/f");
+  touch_file("k/d/f");
   path(p, "k");
   walk_open(&w, p, WALK_POST);
   while((e = walk_read(&w))) {
@@ -489,7 +489,7 @@ test_big(void) {
   mkd("big");
   for(i = 0; i < 20000; i++) {
     snprintf(name, sizeof(name), "big/file_%05d_abcdefghij", i);
-    touch(name);
+    touch_file(name);
   }
   path(p, "big");
   walk_open(&w, p, 0);

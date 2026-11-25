@@ -10,6 +10,10 @@
 #include "../lib/stralloc.h"
 #include "../lib/windoze.h"
 
+#ifdef privileged /* cosmopolitan: attribute macro, clashes with shopt.privileged */
+#undef privileged
+#endif
+
 #if WINDOWS_NATIVE
 #ifndef HAVE_UID_T
 typedef int uid_t;

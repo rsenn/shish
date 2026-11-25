@@ -4,7 +4,7 @@
 #include "../arena.h"
 #include "../windoze.h"
 
-#if !WINDOWS_NATIVE
+#if !WINDOWS_NATIVE && !defined(__COSMOPOLITAN__) /* cosmopolitan has no sbrk() */
 #include <stdint.h>
 #include <unistd.h>
 

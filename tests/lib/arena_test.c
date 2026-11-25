@@ -137,7 +137,7 @@ main(void) {
   test_alloc(&arena_heap, "heap");
   test_alloc(&arena_mmap, "mmap");
 
-#if !WINDOWS_NATIVE
+#if !WINDOWS_NATIVE && !defined(__COSMOPOLITAN__)
   /* musl's sbrk() refuses every growth (ENOMEM): there is no brk arena to test there */
   if(sbrk(16) != (void*)-1)
     test_alloc(&arena_brk, "brk");

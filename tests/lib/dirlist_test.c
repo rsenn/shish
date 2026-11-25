@@ -34,7 +34,7 @@ path(char* out, const char* a, const char* b) {
 }
 
 static void
-touch(const char* d, const char* name) {
+touch_file(const char* d, const char* name) {
   char p[600];
   int fd;
 
@@ -98,8 +98,8 @@ test_basic(void) {
   char p[600];
 
   mkd("t");
-  touch("t", "file");
-  touch("t", "\xc3\xa9t\xc3\xa9.txt");
+  touch_file("t", "file");
+  touch_file("t", "\xc3\xa9t\xc3\xa9.txt");
   path(p, "t", "sub");
   MKDIR(p);
 
@@ -147,9 +147,9 @@ test_hidden(void) {
   char p[600];
 
   mkd("h");
-  touch("h", "vis");
-  touch("h", ".hid");
-  touch("h", "..two");
+  touch_file("h", "vis");
+  touch_file("h", ".hid");
+  touch_file("h", "..two");
   path(p, "h", NULL);
   arena_init(&a, &arena_heap, 0);
 
@@ -204,7 +204,7 @@ test_many(void) {
   mkd("many");
   for(i = 0; i < 20000; i++) {
     snprintf(n, sizeof(n), "entry_%05d_%d", (i * 7919) % 20000, i);
-    touch("many", n);
+    touch_file("many", n);
   }
   path(p, "many", NULL);
 
@@ -252,13 +252,13 @@ test_types(void) {
   char p[600], q[600];
 
   mkd("ty");
-  touch("ty", "reg");
+  touch_file("ty", "reg");
   mkd("ty/dir");
   path(p, "ty", "reg");
   path(q, "ty", "lnk");
   check(symlink("reg", q) == 0, "types: symlink created");
   path(q, "ty", "fifo");
-  check(mkfifo(q, 0644) == 0, "types: fifo created");
+  check(mknod(q, S_IFIFO | 0644, 0) == 0, "types: fifo created");
   path(q, "ty", "dangling");
   check(symlink("nowhere", q) == 0, "types: dangling symlink created");
 
