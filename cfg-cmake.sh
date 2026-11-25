@@ -416,3 +416,19 @@ cfg-wasi() {
     -DDO_CONFORMANCE_TESTS=OFF \
     "$@")
 }
+
+cfg-wasix() {
+ (builddir=build/wasix
+  TYPE=${TYPE:-MinSizeRel}
+  # no wasm EH: fork() is only declared in the asyncify (non-EH) sysroot
+  export WASIXCC_WASM_EXCEPTIONS=no
+  cfg \
+    -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/toolchain-wasix.cmake" \
+    -DHAVE_MMAP_FUNC=1 -DHAVE_MUNMAP=1 \
+    -DENABLE_ALL_BUILTINS=ON \
+    -DENABLE_SHARED=OFF \
+    -DENABLE_PIC=FALSE \
+    -DBUILD_SHFORMAT=OFF \
+    -DDO_CONFORMANCE_TESTS=OFF \
+    "$@")
+}

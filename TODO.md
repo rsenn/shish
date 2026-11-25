@@ -1432,6 +1432,21 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
        `doc/`; the Pages site is generated from the `rsenn` repo, not here).
     Build used: `cfg-wasi` (all builtins incl. compress with xz/lzma, 1.1 MB,
     `build/wasi/shish.wasm`); tested under Node only, plus webassembly.sh `-c`.
+  - **IN PROGRESS: WASIX spike (2026-11-24).** Question: does shish build with `wasixcc` (wasix-libc) and
+    run interactively under `wasmer` / webassembly.sh (real tty via `tty_get`/`tty_set`, fork/exec)?
+    Order: (1) install `wasixcc` via cargo + toolchain, (2) `cfg-wasix` helper, build, (3) run under wasmer,
+    (4) drop the `wasi_compat.h` stubs that wasix-libc provides, (5) record result here and in `doc/wasm.md`.
+    **Done so far:** `wasixcc` 0.4.7 (`cargo install wasixcc`, `wasixccenv download-all`) and a
+    `cfg-wasix` helper plus `cmake/toolchain-wasix.cmake`; shish builds unmodified (`build/wasix/shish`,
+    577 KB, `-DBUILD_SHFORMAT=OFF`). Findings: (a) `fork()` is declared only in the non-EH sysroot, so
+    the build uses `WASIXCC_WASM_EXCEPTIONS=no` (wasm-opt asyncify does fork and `setjmp`), which also
+    drops the `exnref` browser requirement; (b) `check_function_exists` probes die in the asyncify step
+    (wrong-signature stub), so `cfg-wasix` pre-seeds `HAVE_MMAP_FUNC`/`HAVE_MUNMAP`; (c) CMake system name is
+    `Linux`, so the `src/wasi/` stubs are not used. **Blocked:** running it needs a `wasmer` runtime
+    (v7.5.0 `wasmer-linux-amd64.tar.gz`); the download was refused by auto mode, waiting for the user.
+    Next: run `-c`, fork/pipe/external command, then interactive on a pty (`tcgetattr`, line editor).
+    Fallback if it fails: own page (xterm.js + Worker + custom tty import), plan below. Publishing to the
+    Wasmer registry (`wasmer.toml`, `wasmer publish`) is postponed until the user confirms.
   - External commands cannot run; a wasm-hosted "run this program" hook
     (webassembly.sh runs other `.wasm` commands by name) would need a
     host import, not an `execve`.
