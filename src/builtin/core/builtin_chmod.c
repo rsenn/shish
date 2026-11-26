@@ -152,6 +152,7 @@ chmod_one(const struct chmod_opt* o, const char* path) {
   if(stat(path, &st) == -1) {
     if(!o->force)
       builtin_error(o->argv, (char*)path);
+
     return -1;
   }
 
@@ -204,6 +205,7 @@ chmod_tree(const struct chmod_opt* o, const char* root, int recursive) {
         errno = e->err;
         builtin_error(o->argv, (char*)e->path);
       }
+
       ret = 1;
       continue;
     }
@@ -247,9 +249,7 @@ const char help_chmod[] = "    Change file permissions.\n"
 
 int
 builtin_chmod(int argc, char* argv[]) {
-  int c;
-  int recursive = 0;
-  int failed = 0;
+  int c, recursive = 0,  failed = 0;
   char *p, *spec, *premode = NULL;
   struct chmod_opt o = {argv, 0, 0, 0, 0, 0, 0};
 

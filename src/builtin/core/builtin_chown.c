@@ -9,8 +9,9 @@
 #include "../../../lib/str.h"
 #include "../../../lib/stralloc.h"
 #include <dirent.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 const char help_chown[] = "    Change file ownership.\n"
                           "\n"
