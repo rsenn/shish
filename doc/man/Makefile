@@ -1,0 +1,49 @@
+# ===========================================================================
+#
+# Makefile for doc/man subdirectory
+#
+# relative directories
+# ---------------------------------------------------------------------------
+srcdir       = .
+top_srcdir   = ../..
+top_builddir = ../..
+thisdir      = doc/man/
+
+
+
+# include global make configuration
+# ---------------------------------------------------------------------------
+include $(top_builddir)/config.mk
+
+# configuration for this directory
+# ---------------------------------------------------------------------------
+POD = shish.pod
+MAN = shish.1
+
+$(MAN): Makefile $(POD)
+	@$(ECHO_POD2MAN)
+	@pod2man --release="$(PACKAGE_NAME)-$(PACKAGE_VERSION)" \
+                 --center=" " $(srcdir)/$(POD) | grep -A65536 '^\.TH' > $(MAN)
+
+# targets for this directory
+# ---------------------------------------------------------------------------
+all: Makefile $(MAN)
+#	echo $(DISTFILES)
+install:
+
+# distribution configuration
+# ---------------------------------------------------------------------------
+DATA = $(POD)
+
+# installation configuration
+# ---------------------------------------------------------------------------
+man_DATA   = $(MAN)
+man_PREFIX = man1/
+
+# build configuration
+# ---------------------------------------------------------------------------
+CLEANFILES += $(MAN)
+
+# include build.mk (makefile helper)
+# ---------------------------------------------------------------------------
+include $(top_builddir)/build.mk

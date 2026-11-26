@@ -1,0 +1,8 @@
+#!/bin/sh
+# wasixcc without -fPIC/-fpic: wasixcc rejects them unless wasm EH is on, and
+# bundled dependencies (zlib, lz4, zstd) force them in their own CMakeLists.
+for a; do
+  shift
+  case $a in -fPIC|-fpic) ;; *) set -- "$@" "$a" ;; esac
+done
+exec wasixcc "$@"
