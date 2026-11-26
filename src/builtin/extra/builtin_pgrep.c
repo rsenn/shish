@@ -29,7 +29,7 @@ const char help_pgrep[] = "    Look up processes based on name.\n"
 static int
 proc_matches(pid_t pid, rx_t* re, const char* pattern, int full, int exact, int inverse) {
   char path[64];
-  int fd, match = 0;
+  int match = 0;
   stralloc sa;
 
   stralloc_init(&sa);
@@ -38,28 +38,27 @@ proc_matches(pid_t pid, rx_t* re, const char* pattern, int full, int exact, int 
   stralloc_cats(&sa, path);
   stralloc_cats(&sa, full ? "/cmdline" : "/comm");
 
-  if((fd = open_read(sa.s)) != -1) {
-    stralloc_zero(&sa);
+  /* the path in sa is no longer needed once the file is open */
+  if(slurp(sa.s, &sa) == 0) {
+    size_t i;
 
-    if(readclose_append(fd, &sa, 1024) >= 0) {
-      size_t i;
+    sa.len--; /* the NUL slurp() appended */
 
-      /* cmdline separates the arguments with NULs; comm ends in a newline */
-      for(i = 0; i < sa.len; i++)
-        if(!sa.s[i])
-          sa.s[i] = ' ';
+    /* cmdline separates the arguments with NULs; comm ends in a newline */
+    for(i = 0; i < sa.len; i++)
+      if(!sa.s[i])
+        sa.s[i] = ' ';
 
-      while(sa.len && (sa.s[sa.len - 1] == '\n' || sa.s[sa.len - 1] == ' '))
-        sa.len--;
+    while(sa.len && (sa.s[sa.len - 1] == '\n' || sa.s[sa.len - 1] == ' '))
+      sa.len--;
 
-      stralloc_nul(&sa);
+    stralloc_nul(&sa);
 
-      if(exact) {
-        if(str_equal(sa.s, pattern))
-          match = 1;
-      } else if(rx_test(re, sa.s, sa.len)) {
+    if(exact) {
+      if(str_equal(sa.s, pattern))
         match = 1;
-      }
+    } else if(rx_test(re, sa.s, sa.len)) {
+      match = 1;
     }
   }
 
@@ -119,7 +118,6 @@ builtin_pgrep(int argc, char* argv[]) {
         buffer_putulong(fd_out->w, pid);
 
         if(list) {
-          int fd;
           char path[64];
 
           buffer_putspace(fd_out->w);
@@ -132,9 +130,8 @@ builtin_pgrep(int argc, char* argv[]) {
           stralloc_cats(&sa, path);
           stralloc_cats(&sa, "/comm");
 
-          if((fd = open_read(sa.s)) != -1) {
-            stralloc_zero(&sa);
-            readclose_append(fd, &sa, 1024);
+          if(slurp(sa.s, &sa) == 0) {
+            sa.len--; /* the NUL slurp() appended */
 
             while(sa.len && sa.s[sa.len - 1] == '\n')
               sa.len--;

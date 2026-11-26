@@ -29,6 +29,7 @@ int open_trunc(const char* filename);
 int openreadclose(const char* fn, stralloc* sa, size_t bufsize);
 ssize_t readclose_append(int fd, stralloc* sa, size_t bufsize);
 ssize_t readclose(int fd, stralloc* sa, size_t bufsize);
+int slurp(const char* fn, stralloc* sa);
 #endif
 
 int open_temp(char** tmpl);

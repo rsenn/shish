@@ -58,25 +58,6 @@ const char help_free[] = "    Display amount of free and used memory in the syst
                          "\n"
                          "    pattern         (not used in this builtin)\n";
 
-/* Read /proc/meminfo and parse the values */
-static int
-read_meminfo(stralloc* sa) {
-  char path[] = "/proc/meminfo";
-  int fd;
-
-  if((fd = open_read(path)) == -1)
-    return -1;
-
-  stralloc_zero(sa);
-
-  if(readclose_append(fd, sa, 4096) < 0) {
-    stralloc_free(sa);
-    return -1;
-  }
-
-  return 0;
-}
-
 /* Parse a line from /proc/meminfo: "Key: value kB" */
 static int
 parse_memline(const char* line, char* key, size_t key_max, unsigned long* value) {
@@ -170,12 +151,10 @@ builtin_free(int argc, char* argv[]) {
   }
 
   /* Read /proc/meminfo */
-  if(read_meminfo(&sa) != 0) {
+  if(slurp("/proc/meminfo", &sa) != 0) {
     builtin_error(argv, "cannot read /proc/meminfo");
     return 1;
   }
-
-  stralloc_0(&sa);
 
   /* Parse lines */
   char* p = sa.s;

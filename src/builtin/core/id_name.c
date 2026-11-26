@@ -10,17 +10,10 @@ id_name(const char* file, unsigned long id, stralloc* out) {
   stralloc sa = {0};
   const char* p;
   unsigned long v;
-  int fd, r = 0;
+  int r = 0;
 
-  if((fd = open_read(file)) == -1)
+  if(slurp(file, &sa) == -1)
     return 0;
-
-  if(readclose_append(fd, &sa, 4096) < 0) {
-    stralloc_free(&sa);
-    return 0;
-  }
-
-  stralloc_0(&sa);
 
   for(p = sa.s; *p;) {
     size_t n = str_chr(p, ':');

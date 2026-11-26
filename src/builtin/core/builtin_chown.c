@@ -46,17 +46,11 @@ static int
 lookup_id(const char* file, const char* name, size_t n, unsigned long* id) {
   stralloc sa = {0};
   const char* p;
-  int fd, r = -1;
+  int r = -1;
 
-  if((fd = open_read(file)) == -1)
+  if(slurp(file, &sa) == -1)
     return -1;
 
-  if(readclose_append(fd, &sa, 4096) < 0) {
-    stralloc_free(&sa);
-    return -1;
-  }
-
-  stralloc_0(&sa);
 
   for(p = sa.s; *p;) {
     if(!str_diffn(p, name, n) && p[n] == ':') {

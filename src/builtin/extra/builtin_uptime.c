@@ -20,23 +20,6 @@ const char help_uptime[] = "    Tell how long the system has been running.\n"
                            "    -p              show uptime in pretty format\n"
                            "    -s              show system up since, as yyyy-mm-dd HH:MM:SS\n";
 
-/* read a whole /proc file into sa, NUL-terminated; 0 or -1 */
-static int
-slurp(const char* path, stralloc* sa) {
-  int fd;
-
-  stralloc_zero(sa);
-
-  if((fd = open_read(path)) == -1)
-    return -1;
-
-  if(readclose_append(fd, sa, 1024) < 0)
-    return -1;
-
-  stralloc_0(sa);
-  return 0;
-}
-
 /* v as at least two digits, zero-padded */
 static void
 put_2(buffer* o, unsigned long v) {

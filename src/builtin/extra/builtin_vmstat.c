@@ -59,23 +59,6 @@ static const struct vm_row rows[] = {
     {"/proc/vmstat", "pswpout", "pages swapped out", 0},
 };
 
-/* read a whole /proc file into sa, NUL-terminated; 0 or -1 */
-static int
-slurp(const char* path, stralloc* sa) {
-  int fd;
-
-  stralloc_zero(sa);
-
-  if((fd = open_read(path)) == -1)
-    return -1;
-
-  if(readclose_append(fd, sa, 4096) < 0)
-    return -1;
-
-  stralloc_0(sa);
-  return 0;
-}
-
 /* the text after "key:" or "key " at the start of a line, or 0 */
 static const char*
 find_line(const char* s, const char* key) {

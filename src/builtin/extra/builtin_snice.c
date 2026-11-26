@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pwd.h>
 #include <sys/stat.h>
 #include <unistd.h>

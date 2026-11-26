@@ -60,22 +60,6 @@ enum { NCOLS = sizeof(cols) / sizeof(cols[0]), MAXSEL = 16, MAXPID = 64 };
 /* the fields of /proc/PID/stat after the command name; state is 0 */
 enum { F_STATE, F_PPID, F_PGRP, F_SESSION, F_TTY, F_UTIME = 11, F_STIME, F_NICE = 16, F_START = 19, F_N = 20 };
 
-static int
-slurp(const char* path, stralloc* sa) {
-  int fd;
-
-  stralloc_zero(sa);
-
-  if((fd = open_read(path)) == -1)
-    return -1;
-
-  if(readclose_append(fd, sa, 1024) < 0)
-    return -1;
-
-  stralloc_0(sa);
-  return 0;
-}
-
 /* fill p from /proc/pid; 0 or -1 if the process is gone */
 static int
 read_proc(struct proc* p, const char* pid, stralloc* sa) {
