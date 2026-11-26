@@ -1,3 +1,13 @@
+- pgrep-matches-nothing: `pgrep` prints nothing and exits 0 for a process that is running, and
+  `pgrep -c` prints 0; `pkill` on the same pattern works. `pgrep` also exits 0 when nothing matched
+  (POSIX/procps: 1).
+
+  **Repro:**
+  ```sh
+  /bin/sleep 20 & pgrep -x sleep; echo $?   # expected: the pid and 0
+  pgrep nosuchprocess; echo $?              # expected: nothing and 1
+  ```
+
 - fmt-location-overflows-its-buffer: `fmt_location()` copies the whole source file name
   into the caller's buffer, but `debug_location()`, `trace_loc()` and `location2str()` pass
   a `FMT_LOC` buffer (two numbers and a colon), so a long file name smashes the stack.

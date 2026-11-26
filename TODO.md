@@ -18,7 +18,7 @@ fragmentation, execution time.
 | 6-7 | In-process scope helper, trace leftovers | small, independent, no new modules |
 | 8-10 | `sed`/`awk`, `cp`/`mv`, regex engine | feature gaps inside existing builtins |
 | 11 | Applet mode | small, needs only the builtin map |
-| 12 | Directory work: what is left (`lib/dirlist`, `lib/walk` are done) | `du`/`chown` on the walker, glob on `dirlist`, hardening, Windows |
+| 12 | Directory work: what is left (`lib/dirlist`, `lib/walk` are done) | `du` and `chown`/`chgrp` on the walker, glob on `dirlist`, hardening, Windows |
 | 13 | `lib/arena.h` in `src/` | leaf call sites first; needs the `stralloc` freeze helper |
 | 14 | Optional alias/history/job control | medium, module splits |
 | 15 | Binary size | independent, measurable |
@@ -414,8 +414,11 @@ the API and the safety rules are in `doc/directory-walk.md`; what each migration
    a reason to wait):
    - `du`: `-a -s -k -x -H -L`; `-x` is `WALK_XDEV`, sizes come from `walk_stat()`, a hard link is counted once
      (a set of `(st_dev, st_ino)` for `st_nlink > 1`, one array sorted once).
-   - `chown -R` and `chgrp -R`: `-h -H -L -P -f -v -c`; physical by default, `lchown()` for a link met in the tree,
-     `WALK_COMFOLLOW` for `-H`, `WALK_LOGICAL` for `-L`; the owner/group name lookup shared with `ls`.
+   - `chown -R` and `chgrp -R` exist (2026-11-26, `src/builtin/core/builtin_chown.c`: `-R -h -f`) but walk with their
+     own `opendir()` loop and one path buffer, not `lib/walk`; move them onto `walk` and add `-H -L -P -v -c`
+     (`WALK_COMFOLLOW` for `-H`, `WALK_LOGICAL` for `-L`; `lchown()` for a link met in the tree, as now); the
+     owner/group name lookup is `core/id_name.c` (id to name) and `lookup_id()` in that file (name to id), still
+     separate from `ls`'s `getpwuid_r()`.
    - later: `hardlink` and `switch_root` (util-linux list), `install -d`.
    Each ships with a test that runs in a `mktemp -d` and checks what a link points at survived (as `tests/builtin-rm.sh`).
 2. **Pathname expansion on `dirlist`.** Replace libc's `glob()` (and `lib/unix/glob.c` on Windows) by `lib/glob`: one
@@ -1510,10 +1513,16 @@ Tests: `tests/term-vi.sh`. `vi` is always on: there is no `set -o vi` / `set -o 
 Two prioritized lists of programs that are not builtins yet, each with size estimates, POSIX status, whether it can
 be a filter, a category, and the source file it should share with its relatives:
 
-- `doc/coreutils.md` (58 entries from `coreutils.unimplemented`): start with the one-liners
-  (`sync arch hostid yes tty nproc whoami logname printenv`, about 250 lines), then `tac truncate mkfifo nice
-  nohup seq cksum`, then the text filters (`expand unexpand fold comm base64 base32`), then `chown chgrp pathchk du
-  df` (`chown`, `chgrp`, `du` on `lib/walk`), and `dd od pr join csplit stty` last.
+- `doc/coreutils.md` (planned; the list is `coreutils.unimplemented`, `utils-unimplemented.txt` is the current one):
+  done 2026-11-26: `chown chgrp seq stat`; start with the one-liners (`sync arch hostid yes tty nproc whoami
+  logname printenv`, about 250 lines), then `tac truncate mkfifo nice nohup cksum`, then the text filters (`expand
+  unexpand fold comm base64 base32`), then `pathchk du df` (`du` on `lib/walk`), and `dd od pr join csplit stty`
+  last. By the standard-container value, after the one-liners: `du df dd base64 mountpoint flock setsid`.
+- procps, Linux only: done `ps pgrep pkill skill snice free vmstat uptime`; left `pidwait pmap pwdx slabtop tload
+  top w watch sysctl`. Gaps in what exists: `ps -x -a -C --sort` and `etime`; `stat` `Birth:`, `--printf`, `-t`,
+  `-f`; `seq` floats and `-f`; `free -s -c` (the delay is not implemented); `vmstat -m -d -t`; `skill -i`
+  (interactive) is accepted and ignored; `pkill` option letters other than `-i -v -x` are accepted and ignored
+  (`-signal`, `-f`, `-n`, `-o`, `-u`); `snice -t -u -p -c` filters are done, `-i` is not.
 - `doc/util-linux.md` (80 entries from `util-linux.unimplemented`): Linux-only, mostly root-only, so every one is off
   by default behind its own `BUILTIN_<NAME>` and compiled only where the headers exist. Start with the scripting
   staples (`rev mcookie mesg setsid mountpoint fallocate flock namei isosize`), then the process wrappers
@@ -1560,7 +1569,7 @@ out of scope per the "design spec is POSIX" rule.)
 - **`diff`**: real value (794 uses) but by far the biggest: a line diff needs an LCS/Myers engine,
   closer in scope to `text/dfa` than to one `builtin_*.c`; give it its own `text/diff/` the way `sed`
   got `text/sed/`, and its own section if it is picked up.
-- **System/identity utilities** (`chown`, `du`, `df`, `dd`, `nice`, `nohup`, `tty`): individually small
+- **System/identity utilities** (`du`, `df`, `dd`, `nice`, `nohup`, `tty`; `chown` is done): individually small
   (mostly one syscall plus formatting) but only pay off where `fork`+`exec` of the real one is
   unavailable.
 - **Niche/legacy** (`getconf`, `cmp`, `bc` (non-trivial), `comm`, `fold`, `mkfifo`, `join`, `expand`,

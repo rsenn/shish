@@ -1,3 +1,22 @@
+ 2026-11-26  Roman Senn  <roman.l.senn@gmail.com>
+
+   * new EXTRA_BUILTINS (off by default, each its own BUILTIN_<NAME> switch), for
+     scripts in a container without coreutils, procps or util-linux:
+     - src/builtin/core/: chown and chgrp (one file, one walker; names read from
+       /etc/passwd and /etc/group, no getpwnam), seq (integers, -w, -s), stat
+       (-L, -c FORMAT with flags and width); core/id_name.c is the shared
+       id-to-name lookup of stat and ps
+     - src/builtin/extra/: ps (-e -f -p -o), pgrep, pkill, skill, snice, free,
+       vmstat, uptime; all read /proc, so Linux only
+     - help prints several columns when stdout is a terminal, one name per
+       line otherwise
+   * src/re-compat.h is now one regex API (rx_*) over text/dfa and the system
+     <regex.h> (USE_SYSTEM_REGEX); expr, nl, find -regex, pgrep and pkill use it.
+     It was named re_* before, which clashed with glibc's re_search/RE_ICASE.
+   * pgrep/pkill match extended regular expressions, and pgrep -i no longer
+     means -E. free, pkill, skill, snice, uptime and vmstat were not in
+     builtin_table.c and are now.
+
  2026-10-07  Roman Senn  <roman.l.senn@gmail.com>
 
    * release 0.10: the first release since 0.9. ChangeLog entries stopped in

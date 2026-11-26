@@ -24,16 +24,21 @@ times trap type ulimit umask unset wait
 **Extra** — the reason a shish container image can be a single file:
 
 ```
-awk basename cat chmod compress cp cut date digest dirname dirs dump env find
-grep head hostname id link ln ls mkdir mktemp mv nl paste popd pushd readlink
-realpath rm rmdir sed sleep sort split tail tee timeout touch tr uname
-uncompress uniq unlink wc which xargs
+awk basename cat chgrp chmod chown compress cp cut date digest dirname dirs dump
+env find free grep head hostname id link ln ls mkdir mktemp mv nl paste pgrep
+pkill popd ps pushd readlink realpath rm rmdir sed seq skill sleep snice sort
+split stat tail tee timeout touch tr uname uncompress uniq unlink uptime vmstat
+wc which xargs
 ```
 
 `src/builtin/builtins.map` is the one list these come from (name, source file,
 tier); the lists above are generated from it. `compress` and `uncompress` are
 the whole family of compressors and decompressors under their usual names
 (`gzip`, `bzip2`, `xz`, `zstd`, `zcat`, `gunzip`, ...), see below.
+
+`chown` and `chgrp` are one source file too (`builtin_chown.c`, one walker), and so are `skill` and
+`snice` (`builtin_snice.c`). `stat` and `ps` both need user and group names; that lookup is
+`src/builtin/core/id_name.c`, compiled when either is on.
 
 `cp` and `mv` are one source file (`builtin_cp.c`, one function that looks at
 `argv[0]`); `mv` also needs `rm`'s tree removal, so enabling `mv` compiles
@@ -59,6 +64,22 @@ required builtins); a builtin goes there when it stands in for an external progr
 rather than implementing shell syntax. `find`, `grep` and `sed` are the larger ones and get their
 own subsystem under `text/` (see "Regex backend" below) instead of living
 entirely in one `builtin_*.c` file.
+
+## Process and system information
+
+`ps`, `pgrep`, `pkill`, `skill`, `snice`, `free`, `vmstat` and `uptime` read `/proc` and are Linux
+only. In a container with no procps they are what is left to look at and signal processes:
+
+```sh
+$ shish -c 'ps -o pid,user,args -p 1; free -m; uptime -p; pkill -x sleep'
+```
+
+`ps` takes `-e -A -f -p LIST -o KEYWORDS` (`pid ppid pgid sid uid user ni stat tty stime time comm
+args`, `name=HEADING`); `-x`, `-a` and the sort options are not there. `pgrep`/`pkill` match
+extended regular expressions. `skill` and `snice` refuse to run without a tty, user, pid or command
+expression. `stat -c` supports the common GNU conversions (`%n %N %s %a %A %F %u %U %g %G %i %h %x %y
+%z %X %Y %Z`, flags `-` and `0`, a width); `seq` is integers only. `chown` and `chgrp` take
+`-R -h -f` and a name or a number; names come from `/etc/passwd` and `/etc/group`.
 
 ## Choosing
 
@@ -107,13 +128,17 @@ cfg -DENABLE_ALL_BUILTINS=ON -DLIBARCHIVE_ZSTD=OFF -DLIBARCHIVE_LZ4=OFF -DLIBARC
 
 ## Regex backend: `text/dfa` or `regex.h`
 
-`expr` and `sed` always match via `text/dfa` (an in-tree, from-scratch
-POSIX BRE/ERE engine, `text/dfa.h`) — no libc dependency, so both work
-the same way on a static/musl/dietlibc/WASM build as anywhere else. `sed`
-additionally needs `s///`'s substitution machinery (`dfa_replace()`),
-which has no `<regex.h>` equivalent, so it has no backend switch at all.
+`sed` always matches via `text/dfa` (an in-tree, from-scratch POSIX
+BRE/ERE engine, `text/dfa.h`) — no libc dependency, so it works the same
+way on a static/musl/dietlibc/WASM build as anywhere else. It needs
+`s///`'s substitution machinery (`dfa_replace()`), which has no
+`<regex.h>` equivalent, so it has no backend switch at all.
 
-`grep`, `find -regex` and `expr` can go either way:
+`grep`, `find -regex`, `expr`, `nl -b p`, `pgrep` and `pkill` can go either
+way. `expr`, `find`, `nl`, `pgrep` and `pkill` call `src/re-compat.h`, one API (`rx_compile`, `rx_test`,
+`rx_search`, `rx_prefix`, `rx_submatch`, ...) over both engines, limited to
+what the two share (BRE or ERE, case folding, groups 1-9, search from an
+offset, a subject that need not be NUL-terminated with `REG_STARTEND`):
 
 ```sh
 cfg -DUSE_SYSTEM_REGEX=ON   # link the system's <regex.h> instead
