@@ -62,7 +62,7 @@ mv          core/builtin_cp.c               x   core/builtin_rm.c
 nl          filter/builtin_nl.c             x   ../../text/dfa/
 paste       filter/builtin_paste.c          x   -
 pgrep       extra/builtin_pgrep.c           x   -
-#pkill       extra/builtin_pkill.c           x   -
+pkill       extra/builtin_pkill.c           x   -
 popd        extra/builtin_dirstack.c        x   builtin_cd.c
 printf      core/builtin_printf.c           m   -
 pushd       extra/builtin_dirstack.c        x   builtin_cd.c

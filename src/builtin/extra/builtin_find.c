@@ -5,6 +5,7 @@
 #include "../../builtin.h"
 #include "../../exec.h"
 #include "../../fdtable.h"
+#include "../../re-compat.h"
 #include "../../../lib/alloc.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/shell.h"
@@ -20,22 +21,14 @@
 #include <sys/types.h>
 #include <time.h>
 
-#if USE_SYSTEM_REGEX
-#include <regex.h>
-typedef regex_t find_re;
-#else
-#include "../../../text/dfa.h"
-typedef struct dfa find_re;
-#endif
-
 /* >0 while the right side of a && or || that is not needed is parsed: no actions run */
 static int find_dry, find_bad;
-static int find_failed;  /* an -exec, -delete or traversal error: exit status 1 */
-static int find_prune;   /* -prune was evaluated for the current directory */
-static int find_quit;    /* -quit was evaluated: stop the whole walk */
-static int find_depth; /* -depth or -delete: a directory's contents before the directory itself */
-static int find_xdev;  /* -xdev, -mount: stay on the starting point's device */
-static int find_delete; /* -delete is in the expression */
+static int find_failed;               /* an -exec, -delete or traversal error: exit status 1 */
+static int find_prune;                /* -prune was evaluated for the current directory */
+static int find_quit;                 /* -quit was evaluated: stop the whole walk */
+static int find_depth;                /* -depth or -delete: a directory's contents before the directory itself */
+static int find_xdev;                 /* -xdev, -mount: stay on the starting point's device */
+static int find_delete;               /* -delete is in the expression */
 static const struct stat find_nostat; /* stands in for an entry that cannot be stat()ed */
 static long find_maxdepth = -1, find_mindepth;
 static time_t find_now;
@@ -46,7 +39,7 @@ static int find_ere; /* -regextype posix-extended: -regex patterns are EREs, els
 #define FIND_RES 8
 static struct findre {
   int key;
-  find_re re;
+  re_t re;
 } find_res[FIND_RES];
 static int find_nres;
 
@@ -54,10 +47,10 @@ static int find_nres;
 #define FIND_BATCHES 8
 #define FIND_BATCH_MAX 65536
 static struct execbatch {
-  int key;                /* argv index of the -exec token */
-  int first, last;        /* command words are argv[first..last), "{}" and "+" excluded */
-  size_t count;           /* paths held */
-  stralloc paths;         /* NUL-separated */
+  int key;         /* argv index of the -exec token */
+  int first, last; /* command words are argv[first..last), "{}" and "+" excluded */
+  size_t count;    /* paths held */
+  stralloc paths;  /* NUL-separated */
 } find_batches[FIND_BATCHES];
 static int find_nbatches;
 
@@ -78,8 +71,8 @@ find_compare(int cmp, unsigned long long v, unsigned long long n) {
  * (plain run: one path; batch: all of them appended). builtins, functions and programs all work. */
 static int
 find_run(char* argv[], int first, int last, const char* const* paths, size_t npaths, int replace) {
-  int  n = last - first, ac = 0, ret;
-  size_t   total = (size_t)n + (replace ? 0 : npaths);
+  int n = last - first, ac = 0, ret;
+  size_t total = (size_t)n + (replace ? 0 : npaths);
   char** v = alloc((total + 1) * sizeof(char*));
   stralloc* subs = alloc((total + 1) * sizeof(stralloc));
   struct command cmd;
@@ -177,10 +170,11 @@ find_flush_all(char* argv[]) {
 }
 
 /* the compiled form of argv[key + 1], compiled on first use; NULL after an error message */
-static find_re*
+static re_t*
 find_regex(char* argv[], int key, int icase) {
   struct findre* r;
   const char* pat = argv[key + 1];
+  unsigned flags = (find_ere ? RE_EXTENDED : 0) | (icase ? RE_ICASE : 0);
 
   for(int i = 0; i < find_nres; i++)
     if(find_res[i].key == key)
@@ -192,11 +186,9 @@ find_regex(char* argv[], int key, int icase) {
   }
 
   r = &find_res[find_nres];
-#if USE_SYSTEM_REGEX
-  if(regcomp(&r->re, pat, (find_ere ? REG_EXTENDED : 0) | (icase ? REG_ICASE : 0)) != 0) {
-#else
-  if(dfa_compile(&r->re, pat, str_len(pat), (find_ere ? DFA_ERE : 0) | (icase ? DFA_ICASE : 0)) != DFA_OK) {
-#endif
+  re_init(&r->re);
+
+  if(!re_compile(&r->re, pat, flags)) {
     builtin_errmsg(argv, (char*)pat, "invalid regular expression");
     return NULL;
   }
@@ -208,25 +200,16 @@ find_regex(char* argv[], int key, int icase) {
 
 /* does the regular expression match the whole path? (find -regex is anchored at both ends) */
 static int
-find_regex_match(find_re* re, const char* path) {
-#if USE_SYSTEM_REGEX
-  regmatch_t m;
+find_regex_match(re_t* re, const char* path) {
+  size_t len = str_len(path);
 
-  return regexec(re, path, 1, &m, 0) == 0 && m.rm_so == 0 && (size_t)m.rm_eo == str_len(path);
-#else
-  return dfa_prefix(re, path, str_len(path)) == (long)str_len(path);
-#endif
+  return re_prefix(re, path, len) == (long)len;
 }
 
 static void
 find_regex_free(void) {
-  while(find_nres > 0) {
-#if USE_SYSTEM_REGEX
-    regfree(&find_res[--find_nres].re);
-#else
-    dfa_free(&find_res[--find_nres].re);
-#endif
-  }
+  while(find_nres > 0)
+    re_free(&find_res[--find_nres].re);
 }
 
 /* the stat of the entry being evaluated, taken only when a test needs it */
@@ -255,9 +238,9 @@ static int eval_expr(char* argv[], int* i, int end, const char* path, struct wal
 
 static int
 eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
-  char* arg,*val;
+  char *arg, *val;
 
-    if(*i >= end)
+  if(*i >= end)
     return 1;
 
   arg = argv[*i];
@@ -269,7 +252,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
     if(*i < end && str_equal(argv[*i], ")"))
       (*i)++;
-    
+
     return res;
   }
 
@@ -280,12 +263,12 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   if(str_equal(arg, "-type")) {
     (*i)++;
-    
+
     if(*i >= end)
       return 0;
 
     val = argv[(*i)++];
-    
+
     if(str_equal(val, "f"))
       return w->e.type == DL_REG;
     if(str_equal(val, "d"))
@@ -320,7 +303,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
       *i = end;
       return 0;
     }
-    
+
     return find_st(w)->st_mtime > ref.st_mtime;
   }
 
@@ -334,7 +317,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
       return 0;
 
     s = argv[(*i)++];
-    
+
     if(scan_ulong(s + (*s == '+' || *s == '-'), &n) == 0 || s[str_len(s) - 1] < '0' || s[str_len(s) - 1] > '9') {
       builtin_errmsg(argv, "bad number", s);
       find_bad = 1;
@@ -347,12 +330,12 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   if(str_equal(arg, "-name") || str_equal(arg, "-iname")) {
     int ignore_case = str_equal(arg, "-iname");
-    
+
     (*i)++;
-    
+
     if(*i >= end)
       return 0;
-    
+
     char* pat = argv[(*i)++];
     size_t blen;
     const char* base = path_basename(path, str_len(path), &blen);
@@ -385,7 +368,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   /* -regex/-iregex PATTERN: PATTERN matches the whole path; -regextype was read up front */
   if(str_equal(arg, "-regex") || str_equal(arg, "-iregex")) {
-    find_re* re;
+    re_t* re;
     int key = *i;
 
     (*i)++;
@@ -454,7 +437,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
     if(plus) {
       struct execbatch* b = 0;
-      
+
       for(int k = 0; k < find_nbatches; k++)
         if(find_batches[k].key == first - 1)
           b = &find_batches[k];
@@ -564,13 +547,18 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     l = str_len(s);
 
     if(l > 0 && str_chr("bcwkMG", s[l - 1]) < 6) {
-      unit = s[l - 1] == 'c' ? 1 : s[l - 1] == 'w' ? 2 : s[l - 1] == 'k' ? 1024 : s[l - 1] == 'M' ? 1048576ULL : s[l - 1] == 'G' ? 1073741824ULL : 512;
+      unit = s[l - 1] == 'c'   ? 1
+             : s[l - 1] == 'w' ? 2
+             : s[l - 1] == 'k' ? 1024
+             : s[l - 1] == 'M' ? 1048576ULL
+             : s[l - 1] == 'G' ? 1073741824ULL
+                               : 512;
       l--;
     }
 
-    if(l >= sizeof(num)) 
+    if(l >= sizeof(num))
       l = sizeof(num) - 1;
-  
+
     byte_copy(num, l, s);
     num[l] = '\0';
 
@@ -585,7 +573,8 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
   }
 
   /* -mtime/-atime/-ctime N (days, rounded down), -mmin/-amin/-cmin N (minutes, rounded up) */
-  if(arg[0] == '-' && (arg[1] == 'm' || arg[1] == 'a' || arg[1] == 'c') && (str_equal(arg + 2, "time") || str_equal(arg + 2, "min"))) {
+  if(arg[0] == '-' && (arg[1] == 'm' || arg[1] == 'a' || arg[1] == 'c') &&
+     (str_equal(arg + 2, "time") || str_equal(arg + 2, "min"))) {
     int cmp, mins = arg[2] == 'm';
     unsigned long n;
     time_t t = arg[1] == 'm' ? find_st(w)->st_mtime : arg[1] == 'a' ? find_st(w)->st_atime : find_st(w)->st_ctime;
@@ -620,7 +609,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
-    
+
     s = argv[(*i)++];
     kind = *s == '-' ? 1 : *s == '/' ? 2 : 0;
     s += kind != 0;
@@ -681,9 +670,9 @@ eval_term(char* argv[], int* i, int end, const char* path, struct walk* w, int* 
     if(str_equal(op, "-o") || str_equal(op, "-or") || str_equal(op, ")"))
       break;
 
-    if(str_equal(op, "-a") || str_equal(op, "-and")) 
+    if(str_equal(op, "-a") || str_equal(op, "-and"))
       (*i)++;
-    
+
     find_dry += !lhs;
     rhs = eval_primary(argv, i, end, path, w, has_action);
     find_dry -= !lhs;
@@ -696,10 +685,10 @@ eval_term(char* argv[], int* i, int end, const char* path, struct walk* w, int* 
 static int
 eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
   int lhs = eval_term(argv, i, end, path, w, has_action);
-  
+
   while(*i < end) {
     char* op = argv[*i];
-  
+
     if(str_equal(op, "-o") || str_equal(op, "-or")) {
       (*i)++;
       int rhs;
@@ -708,7 +697,7 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* 
       rhs = eval_term(argv, i, end, path, w, has_action);
       find_dry -= !!lhs;
       lhs = lhs || rhs;
-    } else 
+    } else
       break;
   }
 
@@ -741,7 +730,9 @@ find_tree(char* argv[], int expr_start, int expr_end, const char* root, unsigned
   if(!find_delete && n && root[n - 1] == '/')
     follow |= WALK_COMFOLLOW;
 
-  if(walk_open(&w, root, follow | WALK_ERR | WALK_CYCLE | (find_depth ? WALK_POST : WALK_PRE) | (find_xdev ? WALK_XDEV : 0))) {
+  if(walk_open(&w,
+               root,
+               follow | WALK_ERR | WALK_CYCLE | (find_depth ? WALK_POST : WALK_PRE) | (find_xdev ? WALK_XDEV : 0))) {
     builtin_error(argv, (char*)root);
     return 1;
   }
@@ -778,25 +769,26 @@ find_tree(char* argv[], int expr_start, int expr_end, const char* root, unsigned
   return find_bad ? 1 : ret;
 }
 
-const char help_find[] = "    Search for files in a directory hierarchy.\n"
-                         "    find [-H|-L|-P] [PATH...] [EXPRESSION]   (PATH defaults to \".\")\n"
-                         "\n"
-                         "    -H              dereference command-line symbolic links\n"
-                         "    -L              dereference all symbolic links\n"
-                         "    -P              never dereference symbolic links (default)\n"
-                         "\n"
-                         "    Tests:   -name -iname -path -regex -iregex PATTERN, -type [fdlbcps], -newer FILE, -links N,\n"
-                         "             -size [+-]N[bcwkMG], -mtime -atime -ctime N, -mmin -amin -cmin N,\n"
-                         "             -perm [-/]MODE, -empty, -readable, -writable, -executable\n"
-                         "    Options: -maxdepth N, -mindepth N, -depth, -xdev (-mount),\n"
-                         "             -regextype posix-basic|posix-extended (default posix-basic)\n"
-                         "    Actions: -print, -print0, -delete, -prune, -quit,\n"
-                         "             -exec COMMAND ... ;   run COMMAND for each file, '{}' is the path\n"
-                         "             -exec COMMAND ... {} +   run COMMAND once with many paths\n"
-                         "    Operators: ( ) ! -not -a -and -o -or\n"
-                         "\n"
-                         "    COMMAND is run by the shell itself, so builtins and functions work,\n"
-                         "    e.g. find -type f -name '*.sh' -exec source {} \\;\n";
+const char help_find[] =
+    "    Search for files in a directory hierarchy.\n"
+    "    find [-H|-L|-P] [PATH...] [EXPRESSION]   (PATH defaults to \".\")\n"
+    "\n"
+    "    -H              dereference command-line symbolic links\n"
+    "    -L              dereference all symbolic links\n"
+    "    -P              never dereference symbolic links (default)\n"
+    "\n"
+    "    Tests:   -name -iname -path -regex -iregex PATTERN, -type [fdlbcps], -newer FILE, -links N,\n"
+    "             -size [+-]N[bcwkMG], -mtime -atime -ctime N, -mmin -amin -cmin N,\n"
+    "             -perm [-/]MODE, -empty, -readable, -writable, -executable\n"
+    "    Options: -maxdepth N, -mindepth N, -depth, -xdev (-mount),\n"
+    "             -regextype posix-basic|posix-extended (default posix-basic)\n"
+    "    Actions: -print, -print0, -delete, -prune, -quit,\n"
+    "             -exec COMMAND ... ;   run COMMAND for each file, '{}' is the path\n"
+    "             -exec COMMAND ... {} +   run COMMAND once with many paths\n"
+    "    Operators: ( ) ! -not -a -and -o -or\n"
+    "\n"
+    "    COMMAND is run by the shell itself, so builtins and functions work,\n"
+    "    e.g. find -type f -name '*.sh' -exec source {} \\;\n";
 
 int
 builtin_find(int argc, char* argv[]) {
@@ -818,7 +810,7 @@ builtin_find(int argc, char* argv[]) {
   expr_start = first;
 
   while(argv[expr_start] && argv[expr_start][0] != '-' && !str_equal(argv[expr_start], "(") &&
-        !str_equal(argv[expr_start], "!")) 
+        !str_equal(argv[expr_start], "!"))
     expr_start++;
 
   find_dry = find_bad = find_failed = find_prune = find_quit = 0;
@@ -842,7 +834,8 @@ builtin_find(int argc, char* argv[]) {
     else if(str_equal(argv[i], "-xdev") || str_equal(argv[i], "-mount"))
       find_xdev = 1;
     else if(i + 1 < argc && str_equal(argv[i], "-regextype"))
-      find_ere = str_equal(argv[i + 1], "posix-extended") || str_equal(argv[i + 1], "egrep") || str_equal(argv[i + 1], "extended");
+      find_ere = str_equal(argv[i + 1], "posix-extended") || str_equal(argv[i + 1], "egrep") ||
+                 str_equal(argv[i + 1], "extended");
   }
 
   /* -delete removes what the walk reaches: a followed symlink would put the
@@ -855,11 +848,11 @@ builtin_find(int argc, char* argv[]) {
   if(expr_start == first) {
     if(find_tree(argv, first, argc, ".", follow))
       failed = 1;
-  } else 
+  } else
     for(int i = first; i < expr_start && !find_quit; i++)
       if(find_tree(argv, expr_start, argc, argv[i], follow))
         failed = 1;
-  
+
   find_flush_all(argv);
   find_regex_free();
   return failed || find_failed;
