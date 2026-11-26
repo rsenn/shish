@@ -6,6 +6,8 @@
 #include "../fdtable.h"
 #include "../var.h"
 #include "../term.h"
+#include <unistd.h>
+#include <sys/ioctl.h>
 #include "../../lib/str.h"
 #include "../../lib/scan.h"
 
@@ -16,6 +18,22 @@ output_synopsis(struct builtin_cmd* b) {
   buffer_puts(fd_out->w, b->args);
 }
 
+/* width of column c (widest synopsis in it + 2) when entries run column-major in `rows` rows */
+static size_t
+help_colwidth(unsigned c, unsigned rows, unsigned n) {
+  size_t w = 0;
+  unsigned k;
+
+  for(k = c * rows; k < (c + 1) * rows && k < n; k++) {
+    size_t len = str_len(builtin_table[k].name) + 1 + str_len(builtin_table[k].args);
+
+    if(w < len)
+      w = len;
+  }
+
+  return w + 2;
+}
+
 /* help built-in
  * ----------------------------------------------------------------------- */
 const char help_help[] = "    Show a synopsis of every builtin, or the full help for one.\n"
@@ -24,7 +42,7 @@ const char help_help[] = "    Show a synopsis of every builtin, or the full help
 
 int
 builtin_help(int argc, char* argv[]) {
-  size_t i, maxlen[2] = {0, 0};
+  size_t i;
   unsigned int cols;
 
   /* "help command": look up one builtin by name (regardless of its
@@ -49,48 +67,55 @@ builtin_help(int argc, char* argv[]) {
 
   for(i = 0; builtin_table[i].name; i++) {}
 
-#ifdef HAVE_WINSIZE
-  term_winsize();
+  unsigned n_entries = i, rows, ncols = 1;
 
-  if(term_size.ws_col)
-    cols = term_size.ws_col;
-  else
-#endif
+  /* stdout is a terminal: pack the synopses column-major into as many
+     columns as fit the width; otherwise one builtin per line */
+  if(isatty(fd_out->e)) {
+    unsigned c;
+
     cols = 80; /* no TIOCGWINSZ: assume a stock 80-column terminal */
 
-  unsigned n_entries = i;
-  unsigned rows = (n_entries + 1) >> 1;
+#ifdef HAVE_WINSIZE
+    {
+      struct winsize sz;
 
-  for(i = 0; builtin_table[i].name; i++) {
-    size_t len = str_len(builtin_table[i].name) + 1 + str_len(builtin_table[i].args);
+      if(ioctl(fd_out->e, TIOCGWINSZ, &sz) == 0 && sz.ws_col)
+        cols = sz.ws_col;
+    }
+#endif
 
-    size_t* ml = &maxlen[i < rows ? 0 : 1];
+    /* most columns whose summed widths (widest entry + 2 gap) fit */
+    for(ncols = n_entries; ncols > 1; ncols--) {
+      size_t total = 0;
 
-    if(*ml < len)
-      *ml = len;
+      rows = (n_entries + ncols - 1) / ncols;
+
+      for(c = 0; c < ncols; c++)
+        total += help_colwidth(c, rows, n_entries);
+
+      if(total - 2 < cols)
+        break;
+    }
   }
 
-  if(maxlen[0] + maxlen[1] >= cols) {
-    rows = n_entries;
-  } else {
-    unsigned pad = (cols - (maxlen[0] + maxlen[1])) >> 1;
-
-    maxlen[0] += pad > 20 ? 20 : pad;
-  }
+  rows = (n_entries + ncols - 1) / ncols;
 
   for(i = 0; i < rows; i++) {
-    struct builtin_cmd* b = &builtin_table[i];
-    size_t len = str_len(b->name) + 1 + str_len(b->args);
+    unsigned c;
 
-    output_synopsis(b);
+    for(c = 0; c < ncols; c++) {
+      struct builtin_cmd* b;
+      unsigned k = c * rows + i;
 
-    if(rows < n_entries) {
-      buffer_putnspace(fd_out->w, maxlen[0] + 1 - len);
+      if(k >= n_entries)
+        break;
 
-      b += rows;
+      b = &builtin_table[k];
+      output_synopsis(b);
 
-      if(b->name)
-        output_synopsis(b);
+      if(c + 1 < ncols && k + rows < n_entries)
+        buffer_putnspace(fd_out->w, help_colwidth(c, rows, n_entries) - (str_len(b->name) + 1 + str_len(b->args)));
     }
 
     buffer_putnlflush(fd_out->w);

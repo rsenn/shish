@@ -248,6 +248,18 @@
 #ifndef BUILTIN_PGREP
 #define BUILTIN_PGREP 0
 #endif
+#ifndef BUILTIN_SKILL
+#define BUILTIN_SKILL 0
+#endif
+#ifndef BUILTIN_SNICE
+#define BUILTIN_SNICE 0
+#endif
+#ifndef BUILTIN_PKILL
+#define BUILTIN_PKILL 0
+#endif
+#ifndef BUILTIN_FREE
+#define BUILTIN_FREE 0
+#endif
 #ifndef BUILTIN_WHICH
 #define BUILTIN_WHICH 0
 #endif
@@ -564,6 +576,18 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_PGREP
     {"pgrep", &builtin_pgrep, B_DEFAULT, "[-flxv] pattern", help_pgrep},
+#endif
+#if BUILTIN_SKILL
+    {"skill", &builtin_skill, B_DEFAULT, "[-finv] [-signal] [-t tty] [-u user] [-p pid] [-c command] ...", help_skill},
+#endif
+#if BUILTIN_SNICE
+    {"snice", &builtin_snice, B_DEFAULT, "[-finv] [+|-]priority [-t tty] [-u user] [-p pid] [-c command] ...", help_snice},
+#endif
+#if BUILTIN_PKILL
+    {"pkill", &builtin_pkill, B_DEFAULT, "[-fixv] [-signal] pattern", help_pkill},
+#endif
+#if BUILTIN_FREE
+    {"free", &builtin_free, B_DEFAULT, "[-bkmghw] [-c count]", help_free},
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},

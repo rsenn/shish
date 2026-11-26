@@ -61,8 +61,8 @@ mktemp      core/builtin_mktemp.c           x   -
 mv          core/builtin_cp.c               x   core/builtin_rm.c
 nl          filter/builtin_nl.c             x   ../../text/dfa/
 paste       filter/builtin_paste.c          x   -
-pgrep       extra/builtin_pgrep.c           x   -
-pkill       extra/builtin_pkill.c           x   -
+pgrep       extra/builtin_pgrep.c           x   ../../text/dfa/
+pkill       extra/builtin_pkill.c           x   ../../text/dfa/
 popd        extra/builtin_dirstack.c        x   builtin_cd.c
 printf      core/builtin_printf.c           m   -
 pushd       extra/builtin_dirstack.c        x   builtin_cd.c
@@ -77,7 +77,9 @@ rmdir       core/builtin_rmdir.c            x   -
 sed         filter/builtin_sed.c            x   ../../text/sed/,../../text/dfa/
 set         builtin_set.c                   m   -   keep
 shift       builtin_shift.c                 m   -
+skill       extra/builtin_snice.c           x   -
 sleep       core/builtin_sleep.c            x   -
+snice       extra/builtin_snice.c           x   -
 sort        filter/builtin_sort.c           x   -
 source      builtin_source.c                m   -
 split       core/builtin_split.c            x   -

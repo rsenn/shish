@@ -6766,4 +6766,36 @@ rm -rf "$CDIR"
 ##       assertion to check; verified: flags.make reads `C_FLAGS = -Os -falign-... -ffunction-sections`, the
 ##       default MinSizeRel binary is 192248 bytes stripped (328744 before, 201512 at v0.10.0), same failing tests.
 
+## pkill and free were never wired into builtin_table.c/builtin.h, and
+## their bodies mis-parsed /proc (comm kept its "(", EOF read as failure,
+## str_diff used as equality)
+if help pkill >/dev/null 2>&1; then
+  /bin/sleep 30 & P=$!
+  pkill -x sleep
+  wait $P
+  assert_equal "143" "$?" "pkill -x sleep must signal the sleep process (status 128+SIGTERM)"
+fi
+
+if help free >/dev/null 2>&1 && [ -r /proc/meminfo ]; then
+  assert_match "$(free | sed -n 2p)" "Mem:*" "free prints a Mem: row"
+fi
+
+## help prints several columns only when stdout is a tty; a pipe gets one builtin per line
+assert_equal "0" "$(help | grep -c "  ")" "help to a pipe prints one builtin per line (no column padding)"
+
+## skill/snice did not compile and, once built, signalled every process when
+## given no expression; they now need a tty, user, pid or command to act on
+if help skill >/dev/null 2>&1; then
+  skill >/dev/null 2>&1
+  assert_equal "1" "$?" "skill without an expression refuses instead of signalling everything"
+  sleep 30 & P=$!
+  skill -9 -p $P
+  wait $P
+  assert_equal "137" "$?" "skill -9 -p PID kills exactly that process"
+  sleep 30 & P=$!
+  snice +7 -p $P
+  assert_equal "7" "$(ps -o ni= -p $P | tr -d ' ')" "snice +7 -p PID sets the nice value"
+  kill $P
+fi
+
 summary

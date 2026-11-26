@@ -14,7 +14,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/types.h>
- 
+
 const char help_pgrep[] = "    Look up processes based on name.\n"
                           "\n"
                           "    -c              print a count of matching processes\n"
@@ -26,9 +26,8 @@ const char help_pgrep[] = "    Look up processes based on name.\n"
                           "\n"
                           "    pattern         regex to match\n";
 
- 
 static int
-proc_matches(pid_t pid, re_t* re, const char* pattern, int full, int exact, int inverse) {
+proc_matches(pid_t pid, rx_t* re, const char* pattern, int full, int exact, int inverse) {
   char path[64];
   int fd, match = 0;
   stralloc sa;
@@ -48,7 +47,7 @@ proc_matches(pid_t pid, re_t* re, const char* pattern, int full, int exact, int 
       if(exact) {
         if(str_equal(sa.s, pattern))
           match = 1;
-      } else if(re_test(re, sa.s, sa.len)) {
+      } else if(rx_test(re, sa.s, sa.len)) {
         match = 1;
       }
     }
@@ -62,15 +61,13 @@ proc_matches(pid_t pid, re_t* re, const char* pattern, int full, int exact, int 
 int
 builtin_pgrep(int argc, char* argv[]) {
   int c, n = 0, full = 0, list = 0, exact = 0, inverse = 0, icase = 0, count = 0;
-  re_t re;
+  rx_t re;
   DIR* d;
   struct dirent* e;
 
-#if !USE_SYSTEM_REGEX
-  re = (struct dfa){0};
-#endif
+  rx_init(&re);
 
-  while((c = shell_getopt(argc, argv, "cfxliv")) > 0) {
+  while((c = shell_getopt(argc, argv, "cfxliv h")) > 0) {
     switch(c) {
       case 'c': count = 1; break;
       case 'f': full = 1; break;
@@ -87,15 +84,15 @@ builtin_pgrep(int argc, char* argv[]) {
 
   const char* pattern = argv[shell_optind];
 
-  if(!exact && !re_compile(&re, pattern, icase)) {
+  if(!exact && rx_compile(&re, pattern, RX_ERE | (icase ? RX_ICASE : 0))) {
     builtin_errmsg(argv, (char*)pattern, "invalid regular expression");
     return 1;
   }
 
   if(!(d = opendir("/proc"))) {
     if(!exact)
-      re_free(&re);
-    
+      rx_free(&re);
+
     return builtin_error(argv, "/proc");
   }
 
@@ -145,7 +142,7 @@ builtin_pgrep(int argc, char* argv[]) {
   closedir(d);
 
   if(!exact)
-    re_free(&re);
+    rx_free(&re);
 
   if(count) {
     buffer_putulong(fd_out->w, n);

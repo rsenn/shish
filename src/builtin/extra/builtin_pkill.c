@@ -10,7 +10,7 @@
 #include "../../fdtable.h"
 #include "../../sh.h"
 #include "../../job.h"
-#include "../../fdtable.h"
+#include "../../re-compat.h"
 #include "../../../lib/byte.h"
 #include "../../../lib/str.h"
 #include "../../../lib/open.h"
@@ -18,22 +18,28 @@
 #include <errno.h>
 #include <signal.h>
 #include <dirent.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/* Shared process matching logic with builtin_pgrep.c */
-/* In a real implementation, this would be in a shared header */
+const char help_pkill[] = "    Signal processes based on name.\n"
+                          "\n"
+                          "    -i              ignore case when matching\n"
+                          "    -v              negate the match\n"
+                          "    -x              match exactly\n"
+                          "\n"
+                          "    pattern         regex to match\n";
 
 /* Get the process name for a given PID from /proc/pid/stat */
 static int
 get_process_name(pid_t pid, char* buf, size_t buf_size) {
   int fd;
-  char path[PATH_MAX], *p, *end;
-  ssize_t name_len, name_offs, len;
+  char path[(FMT_LONG + 7) & (~15)];
+  ssize_t i, j, len;
+
+  if(buf_size == 0)
+    return -1;
 
   len = str_copy(path, "/proc/");
   len += fmt_long(&path[len], pid);
@@ -42,78 +48,52 @@ get_process_name(pid_t pid, char* buf, size_t buf_size) {
   if((fd = open_read(path)) == -1)
     return -1;
 
-  len = read(fd, buf, buf_size);
-
+  len = read(fd, buf, buf_size - 1);
   close(fd);
 
   if(len <= 0)
     return -1;
 
+  buf[len] = '\0';
+
   /* In /proc/pid/stat, the comm field is between parentheses */
-  if((name_offs = byte_chr(buf, len, '(')) == len)
+  if((i = byte_chr(buf, (size_t)len, '(')) == (size_t)len)
     return -1;
 
-  p = buf + ++name_offs; /* skip '(' */
+  i++;
+  len -= i;
 
-  len -= name_offs;
-
-  if((name_len = byte_chr(&buf[name_offs], len, ')')) == len)
+  if((j = byte_chr(&buf[i], (size_t)len, ')')) == (size_t)len)
     return -1;
 
-  if(name_len  >= buf_size)
-    name_len = buf_size - 1;
-
-  str_copyn(buf, &buf[name_offs], name_len);
+  byte_copyr(buf, (size_t)j, &buf[i]);
+  buf[j] = '\0';
   return 0;
 }
 
 /* Check if a process name matches the given pattern */
 static int
-match_pattern(const char* proc_name, const char* pattern, int exact, int icase) {
-  int match = 1;
+match_pattern(const char* proc_name, rx_t* re, const char* pattern, int exact) {
+  if(exact)
+    return str_len(proc_name) == str_len(pattern) && str_equal(proc_name, pattern);
 
-  if(exact) {
-    if(str_len(proc_name) != str_len(pattern) || str_diff(proc_name, pattern))
-      match = 0;
-  } else {
-    if(!icase) {
-      if(strstr(proc_name, pattern) == NULL)
-        match = 0;
-    } else {
-      /* Case-insensitive match */
-      char* lower_name = malloc(str_len(proc_name) + 1);
-      char* lower_pattern = malloc(str_len(pattern) + 1);
-
-      if(lower_name && lower_pattern) {
-        for(size_t i = 0; i < str_len(proc_name); i++)
-          lower_name[i] = (char)tolower((unsigned char)proc_name[i]);
-        lower_name[str_len(proc_name)] = '\0';
-
-        for(size_t i = 0; i < str_len(pattern); i++)
-          lower_pattern[i] = (char)tolower((unsigned char)pattern[i]);
-        lower_pattern[str_len(pattern)] = '\0';
-
-        if(strstr(lower_name, lower_pattern) == NULL)
-          match = 0;
-      }
-
-      free(lower_name);
-      free(lower_pattern);
-    }
-  }
-
-  return match;
+  return rx_test(re, proc_name, str_len(proc_name)) != 0;
 }
 
 int
 builtin_pkill(int argc, char* argv[]) {
   int c, sig = SIGTERM, inverse = 0, exact = 0, icase = 0;
-  pid_t my_pid = getpid();
+  pid_t pid;
   const char* pattern = NULL;
-  int ret = 0, pid_count = 0, signaled = 0;
+  char proc_name[256];
+  int pid_count = 0, signaled = 0;
+  rx_t re;
+  DIR* dir;
+
+  rx_init(&re);
 
   /* Check options - short options only, no --longopts */
-  while((c = shell_getopt(argc, argv, "cde fgi:noprs t u U v w x X q V h")) > 0) {
+  while((c = shell_getopt(argc, argv, "cde fgi noprs t u U v w x X q V h")) > 0) {
     switch(c) {
       case 'c': /* count - not typical for pkill, but */ break;
       case 'd': /* delimiter */ break;
@@ -135,7 +115,6 @@ builtin_pkill(int argc, char* argv[]) {
       case 'X': /* exact match (alias) */ break;
       case 'q': /* queue */ break;
       case 'Q': /* queue (alias) */ break;
-      case 'h': /* help */ builtin_usage(argv[0]); return 0;
       default: return builtin_invopt(argv);
     }
   }
@@ -148,29 +127,34 @@ builtin_pkill(int argc, char* argv[]) {
 
   pattern = argv[shell_optind];
 
-  /* Scan through /proc to find matching processes and send signals */
-  DIR* dir;
+  if(!exact && rx_compile(&re, pattern, RX_ERE | (icase ? RX_ICASE : 0))) {
+    builtin_errmsg(argv, (char*)pattern, "invalid regular expression");
+    return 2;
+  }
 
+  /* Scan through /proc to find matching processes and send signals */
   if(!(dir = opendir("/proc"))) {
+    if(!exact)
+      rx_free(&re);
+
     builtin_error(argv, "cannot open /proc");
     return 1;
   }
 
   while(1) {
-    struct dirent* entry = readdir(dir);
-    if(!entry)
+    struct dirent* entry;
+
+    if(!(entry = readdir(dir)))
       break;
 
-    pid_t pid;
-    if((pid = (pid_t)atoi(entry->d_name)) <= 0 || pid == my_pid)
+    if((pid = (pid_t)atoi(entry->d_name)) <= 0 || pid == getpid())
       continue;
 
-    char proc_name[256];
     if(get_process_name(pid, proc_name, sizeof(proc_name)) != 0)
       continue;
 
     /* Check if process matches */
-    int matches = match_pattern(proc_name, pattern, exact, icase);
+    int matches = match_pattern(proc_name, &re, pattern, exact);
 
     if(inverse)
       matches = !matches;
@@ -178,22 +162,20 @@ builtin_pkill(int argc, char* argv[]) {
     if(matches) {
       pid_count++;
 
-      if(kill(pid, sig) != -1) {
+      if(kill(pid, sig) != -1)
         signaled++;
-      } /* Error - process might have died or we don't have permission */
-      else {}
     }
   }
 
   closedir(dir);
 
+  if(!exact)
+    rx_free(&re);
+
   /* Return appropriate exit status */
   if(pid_count == 0)
-    /* No processes matched */
     return 1;
 
-  /* For pkill: return 0 if at least one process was signaled,
-     1 if none could be signaled, 2 if syntax error */
   if(signaled > 0)
     return 0;
 

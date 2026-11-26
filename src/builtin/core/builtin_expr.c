@@ -14,12 +14,7 @@
 #include "../../trace.h"
 #include "../../fdtable.h"
 
-/* USE_SYSTEM_REGEX (cmake option) selects the system <regex.h> instead of text/dfa */
-#if USE_SYSTEM_REGEX
-#include <regex.h>
-#else
-#include "../../../text/dfa.h"
-#endif
+#include "../../re-compat.h"
 
 /* run "str : pat", filling *out with what POSIX says to print (first
  * capture group's text, or match length if no group; "" or "0" on no
@@ -28,84 +23,38 @@
  * ----------------------------------------------------------------------- */
 static int
 expr_match(const char* str, const char* pat, stralloc* out) {
-  stralloc_init(out);
-
-#if USE_SYSTEM_REGEX
-  regex_t re;
-  regmatch_t pmatch[10];
-
-  if(regcomp(&re, pat, 0) != 0) {
-    stralloc_catc(out, '0');
-    return 1;
-  }
-
-  /* POSIX expr is anchored to the beginning of the string */
-  char* anchored_pat = malloc(str_len(pat) + 2);
-  anchored_pat[0] = '^';
-  str_copy(anchored_pat + 1, pat);
-  regfree(&re);
-
-  if(regcomp(&re, anchored_pat, 0) != 0) {
-    free(anchored_pat);
-    stralloc_catc(out, '0');
-    return 1;
-  }
-  free(anchored_pat);
-
-  if(regexec(&re, str, 10, pmatch, 0) != 0) {
-    regfree(&re);
-    stralloc_catc(out, '0');
-    return 1;
-  }
-
-  if(re.re_nsub > 0 && pmatch[1].rm_so != -1) {
-    stralloc_catb(out, str + pmatch[1].rm_so, (size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-  } else {
-    char buf[FMT_ULONG];
-    size_t match_len = (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
-    stralloc_catb(out, buf, fmt_ulong(buf, match_len));
-  }
-
-  regfree(&re);
-#else
-  struct dfa d;
-  struct dfa_span m, g[1];
+  rx_t re;
+  struct rx_span g;
   long len;
   size_t str_n = str_len(str);
 
-  byte_zero(&d, sizeof(d));
+  stralloc_init(out);
 
   /* a bad pattern has no match either way; POSIX leaves the result
      unspecified, so treat it the same as "didn't match" */
-  if(dfa_compile(&d, pat, str_len(pat), 0) != DFA_OK) {
+  if(rx_compile(&re, pat, 0)) {
     stralloc_catc(out, '0');
     return 1;
   }
 
-  len = dfa_prefix(&d, str, str_n);
+  /* POSIX expr anchors the match at the start of the string */
+  len = rx_prefix(&re, str, str_n);
 
   if(len < 0) {
-    if(dfa_groups(&d) == 0)
+    if(rx_groups(&re) == 0)
       stralloc_catc(out, '0');
+  } else if(rx_groups(&re) > 0) {
+    struct rx_span m = {0, (size_t)len};
 
-    dfa_free(&d);
-    return 1;
-  }
-
-  if(dfa_groups(&d) > 0) {
-    m.start = 0;
-    m.end = (size_t)len;
-
-    if(dfa_submatch(&d, str, str_n, &m, g, 1) && g[0].start != (size_t)-1)
-      stralloc_catb(out, str + g[0].start, g[0].end - g[0].start);
+    if(rx_submatch(&re, str, str_n, &m, &g, 1) && g.start != RX_NOGROUP)
+      stralloc_catb(out, str + g.start, g.end - g.start);
   } else {
     char buf[FMT_ULONG];
 
     stralloc_catb(out, buf, fmt_ulong(buf, (size_t)len));
   }
 
-  dfa_free(&d);
-#endif
+  rx_free(&re);
 
   return out->len == 0 || (out->len == 1 && out->s[0] == '0') ? 1 : 0;
 }

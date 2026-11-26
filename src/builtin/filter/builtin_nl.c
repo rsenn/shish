@@ -8,7 +8,7 @@
 #include "../../../lib/fmt.h"
 #include "../../../lib/str.h"
 #include "../../../lib/stralloc.h"
-#include "../../../text/dfa.h"
+#include "../../re-compat.h"
 
 const char help_nl[] = "    Number lines of files.\n"
                        "\n"
@@ -28,7 +28,7 @@ const char help_nl[] = "    Number lines of files.\n"
 /* which lines a section numbers */
 struct nl_type {
   char t; /* 'a' 't' 'n' or 'p' */
-  struct dfa re;
+  rx_t re;
 };
 
 struct nl {
@@ -51,7 +51,7 @@ nl_type_parse(struct nl* n, struct nl_type* t, const char* s) {
     return 0;
   }
 
-  if(*s == 'p' && dfa_compile(&t->re, s + 1, str_len(s + 1), 0) == DFA_OK) {
+  if(*s == 'p' && !rx_compile(&t->re, s + 1, 0)) {
     t->t = 'p';
     return 0;
   }
@@ -212,7 +212,7 @@ nl_wanted(struct nl* n, const char* s, size_t len) {
 
       return n->blanks = 0, 1;
     case 't': return len > 0;
-    case 'p': return dfa_test(&t->re, s, len) != 0;
+    case 'p': return rx_test(&t->re, s, len);
   }
 
   return 0;
@@ -292,7 +292,7 @@ nl_finish(void* ctx) {
 
   for(i = 0; i < 3; i++)
     if(n->type[i].t == 'p')
-      dfa_free(&n->type[i].re);
+      rx_free(&n->type[i].re);
 
   stralloc_free(&n->out);
 }

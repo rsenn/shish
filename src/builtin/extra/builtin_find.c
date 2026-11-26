@@ -39,7 +39,7 @@ static int find_ere; /* -regextype posix-extended: -regex patterns are EREs, els
 #define FIND_RES 8
 static struct findre {
   int key;
-  re_t re;
+  rx_t re;
 } find_res[FIND_RES];
 static int find_nres;
 
@@ -170,11 +170,11 @@ find_flush_all(char* argv[]) {
 }
 
 /* the compiled form of argv[key + 1], compiled on first use; NULL after an error message */
-static re_t*
+static rx_t*
 find_regex(char* argv[], int key, int icase) {
   struct findre* r;
   const char* pat = argv[key + 1];
-  unsigned flags = (find_ere ? RE_EXTENDED : 0) | (icase ? RE_ICASE : 0);
+  unsigned flags = (find_ere ? RX_ERE : 0) | (icase ? RX_ICASE : 0);
 
   for(int i = 0; i < find_nres; i++)
     if(find_res[i].key == key)
@@ -186,9 +186,9 @@ find_regex(char* argv[], int key, int icase) {
   }
 
   r = &find_res[find_nres];
-  re_init(&r->re);
+  rx_init(&r->re);
 
-  if(!re_compile(&r->re, pat, flags)) {
+  if(rx_compile(&r->re, pat, flags)) {
     builtin_errmsg(argv, (char*)pat, "invalid regular expression");
     return NULL;
   }
@@ -200,16 +200,16 @@ find_regex(char* argv[], int key, int icase) {
 
 /* does the regular expression match the whole path? (find -regex is anchored at both ends) */
 static int
-find_regex_match(re_t* re, const char* path) {
+find_regex_match(rx_t* re, const char* path) {
   size_t len = str_len(path);
 
-  return re_prefix(re, path, len) == (long)len;
+  return rx_prefix(re, path, len) == (long)len;
 }
 
 static void
 find_regex_free(void) {
   while(find_nres > 0)
-    re_free(&find_res[--find_nres].re);
+    rx_free(&find_res[--find_nres].re);
 }
 
 /* the stat of the entry being evaluated, taken only when a test needs it */
@@ -368,7 +368,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   /* -regex/-iregex PATTERN: PATTERN matches the whole path; -regextype was read up front */
   if(str_equal(arg, "-regex") || str_equal(arg, "-iregex")) {
-    re_t* re;
+    rx_t* re;
     int key = *i;
 
     (*i)++;

@@ -69,7 +69,7 @@ read_meminfo(stralloc* sa) {
 
   stralloc_zero(sa);
 
-  if(readclose_append(fd, sa, 4096) <= 0) {
+  if(readclose_append(fd, sa, 4096) < 0) {
     stralloc_free(sa);
     return -1;
   }
@@ -123,26 +123,14 @@ free_write_val(uint64 val, int human, int pad_width) {
   }
 }
 
-static void
-free_print_row(uint64 vals[8], int human, int pad_width) {
-  for(int i = 0; i < 8; i++) {
-    if(i > 0)
-      buffer_putspace(fd_out->w);
-
-    free_write_val(vals[i], human, pad_width);
-  }
-
-  buffer_putnlflush(fd_out->w);
-}
-
 int
 builtin_free(int argc, char* argv[]) {
-  int c, human = 0, wide = 0, count_repeats = 0, lohi = 0, oneline = 0, delay = 0, totals = 0, commit = 0;
+  int c, unit = 0, human = 0, wide = 0, count_repeats = 0, lohi = 0, oneline = 0, delay = 0, totals = 0, commit = 0;
   // uint64 mem_total = 0, mem_free = 0, mem_available = 0, mem_shared = 0, mem_buffers = 0, mem_cache = 0, swap_total =
   // 0, swap_free = 0;
   uint64 values[VALUE_COUNT] = {0};
   unsigned long value;
-  stralloc sa;
+  stralloc sa = {0};
   char key[64], *lines[256];
   int fd, nlines = 0, delay_sec = 0, first = 1;
 
@@ -150,10 +138,10 @@ builtin_free(int argc, char* argv[]) {
    * Colon after option means it takes an argument. */
   while((c = shell_getopt(argc, argv, "bkmghwcl:Lst:vVh")) > 0) {
     switch(c) {
-      case 'b': /* bytes */ break;
-      case 'k': /* kibibytes (default) */ break;
-      case 'm': /* mebibytes */ break;
-      case 'g': /* gibibytes */ break;
+      case 'b': unit = -1; break;
+      case 'k': unit = 0; break;
+      case 'm': unit = 10; break;
+      case 'g': unit = 20; break;
       case 'h': human = 1; break;
       case 'w': wide = 1; break;
       case 'c': {
@@ -187,6 +175,8 @@ builtin_free(int argc, char* argv[]) {
     return 1;
   }
 
+  stralloc_0(&sa);
+
   /* Parse lines */
   char* p = sa.s;
 
@@ -213,67 +203,70 @@ builtin_free(int argc, char* argv[]) {
       *p++ = '\0';
   }
 
-  stralloc_free(&sa);
-
-  /* Find end of line */
-  while(*p && *p != '\n' && *p != '\r')
-    p++;
-
-  if(*p)
-    *p++ = '\0';
-
-  stralloc_free(&sa);
-
   /* Parse meminfo values */
   for(int i = 0; i < nlines; i++) {
     if(parse_memline(lines[i], key, sizeof(key), &value) != 0)
       continue;
 
-    if(str_diff(key, "MemTotal"))
+    if(str_equal(key, "MemTotal"))
       values[MEM_TOTAL] = value;
-    else if(str_diff(key, "MemFree"))
+    else if(str_equal(key, "MemFree"))
       values[MEM_FREE] = value;
-    else if(str_diff(key, "MemAvailable"))
+    else if(str_equal(key, "MemAvailable"))
       values[MEM_AVAILABLE] = value;
-    else if(str_diff(key, "MemShared"))
+    else if(str_equal(key, "Shmem"))
       values[MEM_SHARED] = value;
-    else if(str_diff(key, "Buffers"))
+    else if(str_equal(key, "Buffers"))
       values[MEM_BUFFERS] += value;
-    else if(str_diff(key, "Cached"))
+    else if(str_equal(key, "Cached"))
       values[MEM_BUFFERS] += value;
-    else if(str_diff(key, "SwapTotal"))
+    else if(str_equal(key, "SwapTotal"))
       values[SWAP_TOTAL] = value;
-    else if(str_diff(key, "SwapFree"))
+    else if(str_equal(key, "SwapFree"))
       values[SWAP_FREE] = value;
   }
+
+  stralloc_free(&sa);
 
   /* Calculate used memory */
   values[MEM_USED] = values[MEM_TOTAL] - values[MEM_AVAILABLE];
 
-  /* Output - repeat if needed */
+  /* Output: values are in kB; -h scales by itself */
+  if(human)
+    unit = -1;
+
+  for(int i = 0; i < VALUE_COUNT; i++)
+    values[i] = unit < 0 ? values[i] * 1024 : values[i] >> unit;
+
   int repeat_count = 0;
 
   do {
-    if(!first || repeat_count > 0 || delay || oneline || totals || commit) {
-      if(!first) {
-        /* If repeating with delay, sleep */
-        if(delay > 0) {
-          /* usleep(delay * 1000000); */ /* would need usleep */
-        }
-      }
+    uint64 mem[6] = {values[MEM_TOTAL], values[MEM_USED], values[MEM_FREE], values[MEM_SHARED], values[MEM_BUFFERS], values[MEM_AVAILABLE]};
+    uint64 swp[3] = {values[SWAP_TOTAL], values[SWAP_TOTAL] - values[SWAP_FREE], values[SWAP_FREE]};
+    static const char* const hdr[] = {"total", "used", "free", "shared", "buff/cache", "available"};
 
-      first = 0;
+    buffer_puts(fd_out->w, "        ");
 
-      free_print_row(values, human, (totals || oneline) ? 0 : 15);
+    for(int i = 0; i < 6; i++) {
+      buffer_puts(fd_out->w, hdr[i]);
+      buffer_putnspace(fd_out->w, 12 - (int)str_len(hdr[i]));
     }
 
+    buffer_putnlflush(fd_out->w);
+    buffer_puts(fd_out->w, "Mem:    ");
+
+    for(int i = 0; i < 6; i++)
+      free_write_val(mem[i], human, 12);
+
+    buffer_putnlflush(fd_out->w);
+    buffer_puts(fd_out->w, "Swap:   ");
+
+    for(int i = 0; i < 3; i++)
+      free_write_val(swp[i], human, 12);
+
+    buffer_putnlflush(fd_out->w);
     repeat_count++;
-    first = 1; /* reset first for subsequent repeats */
-
-    if(delay > 0 && repeat_count < count_repeats) {
-      /* usleep(delay * 1000000); */ /* would need usleep */
-    }
-  } while(repeat_count < count_repeats && count_repeats > 0);
+  } while(repeat_count < count_repeats);
 
   return 0;
 }
