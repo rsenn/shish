@@ -45,6 +45,8 @@ int builtin_dirs(int argc, char* argv[]); /* dirs, popd, pushd: src/builtin/extr
 int builtin_popd(int argc, char* argv[]);
 int builtin_pushd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
+int builtin_chown(int argc, char* argv[]);
+int builtin_chgrp(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
 int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir);      /* src/builtin/core/builtin_chmod.c */
 int builtin_rm_tree(char* argv[], stralloc* path, int force, int verbose); /* src/builtin/core/builtin_rm.c */
@@ -234,6 +236,8 @@ extern const char help_wait[];
 extern const char help_wc[];
 extern const char help_pgrep[];
 extern const char help_pkill[];
+extern const char help_chown[];
+extern const char help_chgrp[];
 extern const char help_uptime[];
 extern const char help_vmstat[];
 extern const char help_skill[];

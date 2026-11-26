@@ -6810,4 +6810,51 @@ if help vmstat >/dev/null 2>&1 && [ -r /proc/vmstat ]; then
   assert_match "$(vmstat -s | sed -n 1p)" "* K total memory" "vmstat -s starts with the total memory in K"
 fi
 
+if help chown >/dev/null 2>&1; then
+  # Create a test file
+  echo "test content" > chown_test_file
+  # Attempt to chown it to root (will fail unless run as root, but we check exit status/behavior)
+  # In a shell environment, we can't easily change ownership without root,
+  # but we can verify that it handles options and invalid owner names correctly.
+  assert_equal "1" "$(chown nonexistinguser_xyz chown_test_file 2>/dev/null; echo $?)" "chown fails for nonexisting user"
+  assert_equal "1" "$(chown :nonexistinggroup_xyz chown_test_file 2>/dev/null; echo $?)" "chown fails for nonexisting group"
+  
+  # Verify help is present
+  assert_match "$(help chown)" "*Change file ownership*" "help chown shows correct synopsis"
+  
+  rm chown_test_file
+fi
+
+## chown/chgrp: the first chown draft did not compile (str_chr is an index) and -R took an argument
+if help chown >/dev/null 2>&1; then
+  D=$(mktemp -d)
+  touch "$D/f"
+  mkdir "$D/s"
+  touch "$D/s/g"
+  chown "$(id -u):$(id -g)" "$D/f"
+  assert_equal "0" "$?" "chown with numeric OWNER:GROUP succeeds on a file I own"
+  chown -R "$(id -u)" "$D"
+  assert_equal "0" "$?" "chown -R walks a tree and does not take the next word as its argument"
+  chown :"$(id -g)" "$D/f"
+  assert_equal "0" "$?" "chown :GROUP changes only the group"
+  chown no-such-user-x "$D/f" 2>/dev/null
+  assert_equal "1" "$?" "chown with an unknown OWNER fails"
+  chown "$(id -u)" "$D/missing" 2>/dev/null
+  assert_equal "1" "$?" "chown of a missing file fails"
+  assert_equal "" "$(chown -f "$(id -u)" "$D/missing" 2>&1)" "chown -f prints nothing for a missing file"
+  rm -rf "$D"
+fi
+
+if help chgrp >/dev/null 2>&1; then
+  D=$(mktemp -d)
+  touch "$D/f"
+  chgrp -R "$(id -g)" "$D"
+  assert_equal "0" "$?" "chgrp -R with a numeric GROUP succeeds on files I own"
+  chgrp no-such-group-x "$D/f" 2>/dev/null
+  assert_equal "1" "$?" "chgrp with an unknown GROUP fails"
+  chgrp "$(id -g)" 2>/dev/null
+  assert_equal "1" "$?" "chgrp without a file operand fails"
+  rm -rf "$D"
+fi
+
 summary

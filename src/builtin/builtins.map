@@ -20,7 +20,9 @@ basename    core/builtin_basename.c         x   -
 break       builtin_break.c                 m   -
 cat         filter/builtin_cat.c            x   -
 cd          builtin_cd.c                    m   -
+chgrp       core/builtin_chown.c            x   -
 chmod       core/builtin_chmod.c            x   -
+chown       core/builtin_chown.c            x   -
 command     builtin_command.c               m   -
 compress    filter/builtin_compress.c       x   -
 continue    builtin_break.c                 m   -

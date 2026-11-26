@@ -23,6 +23,12 @@
 #ifndef BUILTIN_CHMOD
 #define BUILTIN_CHMOD 0
 #endif
+#ifndef BUILTIN_CHGRP
+#define BUILTIN_CHGRP 0
+#endif
+#ifndef BUILTIN_CHOWN
+#define BUILTIN_CHOWN 0
+#endif
 #ifndef BUILTIN_CP
 #define BUILTIN_CP 0
 #endif
@@ -304,7 +310,7 @@ struct builtin_cmd builtin_table[] = {
     {"cd", &builtin_cd, B_DEFAULT, "[-L|-P] [directory]", help_cd},
 #endif
 #if BUILTIN_CHMOD
-    {"chmod", &builtin_chmod, B_DEFAULT, "[-Rvcf] mode file...", help_chmod},
+    {"chmod", &builtin_chmod, B_DEFAULT, "[-vcfc] mode file...", help_chmod},
 #endif
 #if BUILTIN_COMMAND
     {"command", &builtin_command, B_DEFAULT, "[-pVv] command [arg ...]", help_command},
@@ -594,6 +600,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_VMSTAT
     {"vmstat", &builtin_vmstat, B_DEFAULT, "[-afs] [-S unit] [delay [count]]", help_vmstat},
+#endif
+#if BUILTIN_CHGRP
+    {"chgrp", &builtin_chgrp, B_DEFAULT, "[-Rhf] GROUP file...", help_chgrp},
+#endif
+#if BUILTIN_CHOWN
+    {"chown", &builtin_chown, B_DEFAULT, "[-Rhf] OWNER[:GROUP] file...", help_chown},
 #endif
 #if BUILTIN_PKILL
     {"pkill", &builtin_pkill, B_DEFAULT, "[-fixv] [-signal] pattern", help_pkill},
