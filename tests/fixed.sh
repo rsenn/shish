@@ -6907,4 +6907,12 @@ if help pgrep >/dev/null 2>&1; then
   wait $P 2>/dev/null
 fi
 
+## a file that reports no size (a device, /proc) is read, not taken for empty
+if test -c /dev/zero; then
+  assert_equal "20" "$(head -c 20 /dev/zero | wc -c | tr -d ' ')" "head -c reads a character device that has no size"
+fi
+EMPTY=$(mktemp)
+assert_equal "0" "$(head -c 5 "$EMPTY" | wc -c | tr -d ' ')" "head -c of an empty regular file gives nothing"
+rm -f "$EMPTY"
+
 summary

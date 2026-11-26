@@ -10,8 +10,13 @@ filter_open_file(buffer* b, char* rbuf, size_t rlen, const char* path) {
   int fd;
 
   /* try memory-mapping the file first for maximum throughput */
-  if(buffer_mmapread(b, path) == 0)
-    return 0;
+  if(buffer_mmapread(b, path) == 0) {
+    if(b->n)
+      return 0;
+
+    /* mapped as empty: a really empty file, or a device, fifo or /proc file that reports no size (/dev/zero);
+       read(2) it below, which gives the bytes of the second kind and an end of file for the first */
+  }
 
   /* fall back to standard read descriptor if mmap is unavailable */
   if((fd = open_read(path)) == -1)

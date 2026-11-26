@@ -1,5 +1,9 @@
  2026-11-26  Roman Senn  <roman.l.senn@gmail.com>
 
+   * src/filter/filter_open_file.c (filter_open_file): a file that maps with size 0 is
+     read with read(2) instead of being taken for empty; head -c 20 /dev/zero (and
+     /dev/urandom, /proc files) gave no output.
+
    * new EXTRA_BUILTINS (off by default, each its own BUILTIN_<NAME> switch), for
      scripts in a container without coreutils, procps or util-linux:
      - src/builtin/core/: chown and chgrp (one file, one walker; names read from
