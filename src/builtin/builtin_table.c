@@ -245,6 +245,9 @@
 #ifndef BUILTIN_WC
 #define BUILTIN_WC 0
 #endif
+#ifndef BUILTIN_PGREP
+#define BUILTIN_PGREP 0
+#endif
 #ifndef BUILTIN_WHICH
 #define BUILTIN_WHICH 0
 #endif
@@ -558,6 +561,9 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_WC
     {"wc", &builtin_wc, B_DEFAULT, "[-cmlLw] [file...]", help_wc},
+#endif
+#if BUILTIN_PGREP
+    {"pgrep", &builtin_pgrep, B_DEFAULT, "[-flxv] pattern", help_pgrep},
 #endif
 #if BUILTIN_WHICH
     {"which", &builtin_which, B_DEFAULT, "[-a] filename ...", help_which},

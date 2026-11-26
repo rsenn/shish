@@ -35,7 +35,11 @@ size_t fmt_8long(char* dest, unsigned long src);
  * Does not truncate! */
 size_t fmt_ulong0(char*, unsigned long src, size_t padto);
 
+/* write '-' for negative integers */
 size_t fmt_minus(char* dest, int src);
+
+/* write a human readable ASCII representation of a long integer */
+size_t fmt_human(char*, uint64);
 
 #ifdef UINT64_H
 size_t fmt_8longlong(char* dest, uint64 i);

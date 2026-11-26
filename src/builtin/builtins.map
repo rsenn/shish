@@ -41,6 +41,7 @@ expr        core/builtin_expr.c             m   ../../text/dfa/
 false       core/builtin_false.c            d   -
 fdtable     builtin_fdtable.c               d   -
 find        extra/builtin_find.c            x   ../../text/dfa/
+free        extra/builtin_free.c            x   -
 getopts     builtin_getopts.c               m   -
 grep        filter/builtin_grep.c           x   ../../text/dfa/
 hash        builtin_hash.c                  m   -
@@ -60,6 +61,8 @@ mktemp      core/builtin_mktemp.c           x   -
 mv          core/builtin_cp.c               x   core/builtin_rm.c
 nl          filter/builtin_nl.c             x   ../../text/dfa/
 paste       filter/builtin_paste.c          x   -
+pgrep       extra/builtin_pgrep.c           x   -
+#pkill       extra/builtin_pkill.c           x   -
 popd        extra/builtin_dirstack.c        x   builtin_cd.c
 printf      core/builtin_printf.c           m   -
 pushd       extra/builtin_dirstack.c        x   builtin_cd.c

@@ -29,8 +29,7 @@ typedef struct dfa find_re;
 #endif
 
 /* >0 while the right side of a && or || that is not needed is parsed: no actions run */
-static int find_dry;
-static int find_bad;
+static int find_dry, find_bad;
 static int find_failed;  /* an -exec, -delete or traversal error: exit status 1 */
 static int find_prune;   /* -prune was evaluated for the current directory */
 static int find_quit;    /* -quit was evaluated: stop the whole walk */
@@ -79,22 +78,21 @@ find_compare(int cmp, unsigned long long v, unsigned long long n) {
  * (plain run: one path; batch: all of them appended). builtins, functions and programs all work. */
 static int
 find_run(char* argv[], int first, int last, const char* const* paths, size_t npaths, int replace) {
-  int n = last - first, ac = 0, ret;
-  size_t k, total = (size_t)n + (replace ? 0 : npaths);
+  int  n = last - first, ac = 0, ret;
+  size_t   total = (size_t)n + (replace ? 0 : npaths);
   char** v = alloc((total + 1) * sizeof(char*));
   stralloc* subs = alloc((total + 1) * sizeof(stralloc));
   struct command cmd;
-  int i;
 
   if(!v || !subs) {
     builtin_error(argv, "-exec");
     return 1;
   }
 
-  for(k = 0; k < total; k++)
+  for(size_t k = 0; k < total; k++)
     stralloc_init(&subs[k]);
 
-  for(i = first; i < last; i++) {
+  for(int i = first; i < last; i++) {
     const char* a = argv[i];
     size_t pos;
 
@@ -122,7 +120,7 @@ find_run(char* argv[], int first, int last, const char* const* paths, size_t npa
   }
 
   if(!replace)
-    for(k = 0; k < npaths; k++)
+    for(size_t k = 0; k < npaths; k++)
       v[ac++] = (char*)paths[k];
 
   v[ac] = NULL;
@@ -136,7 +134,7 @@ find_run(char* argv[], int first, int last, const char* const* paths, size_t npa
     ret = EXIT_NOTFOUND;
   }
 
-  for(k = 0; k < total; k++)
+  for(size_t k = 0; k < total; k++)
     stralloc_free(&subs[k]);
 
   alloc_free(subs);
@@ -147,13 +145,13 @@ find_run(char* argv[], int first, int last, const char* const* paths, size_t npa
 static void
 find_flush(char* argv[], struct execbatch* b) {
   const char** paths;
-  size_t i, off = 0;
+  size_t off = 0;
 
   if(!b->count)
     return;
 
   if((paths = (const char**)alloc(b->count * sizeof(char*)))) {
-    for(i = 0; i < b->count; i++) {
+    for(size_t i = 0; i < b->count; i++) {
       paths[i] = b->paths.s + off;
       off += str_len(b->paths.s + off) + 1;
     }
@@ -170,9 +168,7 @@ find_flush(char* argv[], struct execbatch* b) {
 
 static void
 find_flush_all(char* argv[]) {
-  int i;
-
-  for(i = 0; i < find_nbatches; i++) {
+  for(int i = 0; i < find_nbatches; i++) {
     find_flush(argv, &find_batches[i]);
     stralloc_free(&find_batches[i].paths);
   }
@@ -183,11 +179,10 @@ find_flush_all(char* argv[]) {
 /* the compiled form of argv[key + 1], compiled on first use; NULL after an error message */
 static find_re*
 find_regex(char* argv[], int key, int icase) {
-  int i;
   struct findre* r;
   const char* pat = argv[key + 1];
 
-  for(i = 0; i < find_nres; i++)
+  for(int i = 0; i < find_nres; i++)
     if(find_res[i].key == key)
       return &find_res[i].re;
 
@@ -237,9 +232,9 @@ find_regex_free(void) {
 /* the stat of the entry being evaluated, taken only when a test needs it */
 static const struct stat*
 find_st(struct walk* w) {
-  const struct stat* st = walk_stat(w);
+  const struct stat* st;
 
-  if(!st) {
+  if(!(st = walk_stat(w))) {
     builtin_error(find_argv, (char*)w->e.path);
     find_failed = 1;
     return &find_nostat;
@@ -260,16 +255,21 @@ static int eval_expr(char* argv[], int* i, int end, const char* path, struct wal
 
 static int
 eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
-  if(*i >= end)
+  char* arg,*val;
+
+    if(*i >= end)
     return 1;
 
-  char* arg = argv[*i];
+  arg = argv[*i];
 
   if(str_equal(arg, "(")) {
     (*i)++;
+
     int res = eval_expr(argv, i, end, path, w, has_action);
+
     if(*i < end && str_equal(argv[*i], ")"))
       (*i)++;
+    
     return res;
   }
 
@@ -280,9 +280,12 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   if(str_equal(arg, "-type")) {
     (*i)++;
+    
     if(*i >= end)
       return 0;
-    char* val = argv[(*i)++];
+
+    val = argv[(*i)++];
+    
     if(str_equal(val, "f"))
       return w->e.type == DL_REG;
     if(str_equal(val, "d"))
@@ -299,6 +302,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     if(str_equal(val, "s"))
       return S_ISSOCK(find_st(w)->st_mode);
 #endif
+
     return 0;
   }
 
@@ -309,12 +313,14 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     if(stat(argv[(*i)++], &ref) == -1) {
       builtin_error(argv, argv[*i - 1]);
       find_bad = 1;
       *i = end;
       return 0;
     }
+    
     return find_st(w)->st_mtime > ref.st_mtime;
   }
 
@@ -326,27 +332,33 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     s = argv[(*i)++];
+    
     if(scan_ulong(s + (*s == '+' || *s == '-'), &n) == 0 || s[str_len(s) - 1] < '0' || s[str_len(s) - 1] > '9') {
       builtin_errmsg(argv, "bad number", s);
       find_bad = 1;
       *i = end;
       return 0;
     }
+
     return find_compare(*s == '+' ? 1 : *s == '-' ? -1 : 0, (unsigned long)find_st(w)->st_nlink, n);
   }
 
   if(str_equal(arg, "-name") || str_equal(arg, "-iname")) {
     int ignore_case = str_equal(arg, "-iname");
+    
     (*i)++;
+    
     if(*i >= end)
       return 0;
+    
     char* pat = argv[(*i)++];
     size_t blen;
     const char* base = path_basename(path, str_len(path), &blen);
+
     if(ignore_case) {
       stralloc lp, lb;
-      size_t k;
       int m;
 
       stralloc_init(&lp);
@@ -354,11 +366,11 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
       stralloc_copys(&lp, pat);
       stralloc_copyb(&lb, base, blen);
 
-      for(k = 0; k < lp.len; k++)
+      for(size_t k = 0; k < lp.len; k++)
         if(lp.s[k] >= 'A' && lp.s[k] <= 'Z')
           lp.s[k] += 'a' - 'A';
 
-      for(k = 0; k < lb.len; k++)
+      for(size_t k = 0; k < lb.len; k++)
         if(lb.s[k] >= 'A' && lb.s[k] <= 'Z')
           lb.s[k] += 'a' - 'A';
 
@@ -379,6 +391,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     (*i)++;
     re = find_regex(argv, key, arg[1] == 'i');
 
@@ -402,6 +415,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     pat = argv[(*i)++];
     return path_fnmatch(pat, str_len(pat), path, str_len(path), 0) == 0;
   }
@@ -440,9 +454,8 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
     if(plus) {
       struct execbatch* b = 0;
-      int k;
-
-      for(k = 0; k < find_nbatches; k++)
+      
+      for(int k = 0; k < find_nbatches; k++)
         if(find_batches[k].key == first - 1)
           b = &find_batches[k];
 
@@ -537,8 +550,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
   /* -size [+-]N[bcwkMG]: size in units of N, rounded up (default 512-byte blocks) */
   if(str_equal(arg, "-size")) {
-    char num[32];
-    char* s;
+    char num[32], *s;
     int cmp;
     unsigned long n;
     unsigned long long unit = 512;
@@ -547,6 +559,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     s = argv[(*i)++];
     l = str_len(s);
 
@@ -555,10 +568,9 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
       l--;
     }
 
-    if(l >= sizeof(num)) {
+    if(l >= sizeof(num)) 
       l = sizeof(num) - 1;
-    }
-
+  
     byte_copy(num, l, s);
     num[l] = '\0';
 
@@ -582,12 +594,14 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+
     if(!find_num(argv[*i], &cmp, &n)) {
       builtin_errmsg(argv, "bad number", argv[*i]);
       find_bad = 1;
       *i = end;
       return 0;
     }
+
     (*i)++;
 
     if(age < 0)
@@ -606,6 +620,7 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
     (*i)++;
     if(*i >= end)
       return 0;
+    
     s = argv[(*i)++];
     kind = *s == '-' ? 1 : *s == '/' ? 2 : 0;
     s += kind != 0;
@@ -658,29 +673,33 @@ eval_primary(char* argv[], int* i, int end, const char* path, struct walk* w, in
 
 static int
 eval_term(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
-  int lhs = eval_primary(argv, i, end, path, w, has_action);
+  int rhs, lhs = eval_primary(argv, i, end, path, w, has_action);
+
   while(*i < end) {
     char* op = argv[*i];
+
     if(str_equal(op, "-o") || str_equal(op, "-or") || str_equal(op, ")"))
       break;
-    if(str_equal(op, "-a") || str_equal(op, "-and")) {
-      (*i)++;
-    }
-    int rhs;
 
+    if(str_equal(op, "-a") || str_equal(op, "-and")) 
+      (*i)++;
+    
     find_dry += !lhs;
     rhs = eval_primary(argv, i, end, path, w, has_action);
     find_dry -= !lhs;
     lhs = lhs && rhs;
   }
+
   return lhs;
 }
 
 static int
 eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* has_action) {
   int lhs = eval_term(argv, i, end, path, w, has_action);
+  
   while(*i < end) {
     char* op = argv[*i];
+  
     if(str_equal(op, "-o") || str_equal(op, "-or")) {
       (*i)++;
       int rhs;
@@ -689,10 +708,10 @@ eval_expr(char* argv[], int* i, int end, const char* path, struct walk* w, int* 
       rhs = eval_term(argv, i, end, path, w, has_action);
       find_dry -= !!lhs;
       lhs = lhs || rhs;
-    } else {
+    } else 
       break;
-    }
   }
+
   return lhs;
 }
 
@@ -782,8 +801,7 @@ const char help_find[] = "    Search for files in a directory hierarchy.\n"
 int
 builtin_find(int argc, char* argv[]) {
   unsigned follow = 0;
-  int first = 1, expr_start;
-  int i, failed = 0;
+  int first = 1, expr_start, failed = 0;
 
   /* -H/-L/-P only when they are whole arguments: "-type" is an expression, not option letters */
   for(; argv[first]; first++) {
@@ -800,9 +818,8 @@ builtin_find(int argc, char* argv[]) {
   expr_start = first;
 
   while(argv[expr_start] && argv[expr_start][0] != '-' && !str_equal(argv[expr_start], "(") &&
-        !str_equal(argv[expr_start], "!")) {
+        !str_equal(argv[expr_start], "!")) 
     expr_start++;
-  }
 
   find_dry = find_bad = find_failed = find_prune = find_quit = 0;
   find_depth = find_xdev = find_ere = find_delete = 0;
@@ -813,7 +830,7 @@ builtin_find(int argc, char* argv[]) {
   find_argv = argv;
   find_now = time(NULL);
 
-  for(i = expr_start; i < argc; i++) {
+  for(int i = expr_start; i < argc; i++) {
     unsigned long v;
 
     if(i + 1 < argc && str_equal(argv[i], "-maxdepth") && scan_ulong(argv[i + 1], &v) > 0)
@@ -838,12 +855,11 @@ builtin_find(int argc, char* argv[]) {
   if(expr_start == first) {
     if(find_tree(argv, first, argc, ".", follow))
       failed = 1;
-  } else {
-    for(i = first; i < expr_start && !find_quit; i++)
+  } else 
+    for(int i = first; i < expr_start && !find_quit; i++)
       if(find_tree(argv, expr_start, argc, argv[i], follow))
         failed = 1;
-  }
-
+  
   find_flush_all(argv);
   find_regex_free();
   return failed || find_failed;
