@@ -67,6 +67,7 @@ pgrep       extra/builtin_pgrep.c           x   ../../text/dfa/
 pkill       extra/builtin_pkill.c           x   ../../text/dfa/
 popd        extra/builtin_dirstack.c        x   builtin_cd.c
 printf      core/builtin_printf.c           m   -
+ps          extra/builtin_ps.c              x   core/id_name.c
 pushd       extra/builtin_dirstack.c        x   builtin_cd.c
 pwd         core/builtin_pwd.c              m   -
 read        builtin_read.c                  m   -
@@ -77,6 +78,7 @@ return      builtin_return.c                m   -
 rm          core/builtin_rm.c               x   -
 rmdir       core/builtin_rmdir.c            x   -
 sed         filter/builtin_sed.c            x   ../../text/sed/,../../text/dfa/
+seq         core/builtin_seq.c              x   -
 set         builtin_set.c                   m   -   keep
 shift       builtin_shift.c                 m   -
 skill       extra/builtin_snice.c           x   -
@@ -85,6 +87,7 @@ snice       extra/builtin_snice.c           x   -
 sort        filter/builtin_sort.c           x   -
 source      builtin_source.c                m   -
 split       core/builtin_split.c            x   -
+stat        core/builtin_stat.c             x   core/id_name.c
 tail        filter/builtin_tail.c           x   -
 tee         core/builtin_tee.c              x   -
 test        core/builtin_test.c             m   -

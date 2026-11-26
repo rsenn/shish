@@ -6857,4 +6857,38 @@ if help chgrp >/dev/null 2>&1; then
   rm -rf "$D"
 fi
 
+## seq, stat and ps: new builtins (seq with a negative first operand once printed zeros forever)
+if help seq >/dev/null 2>&1; then
+  assert_equal "1 2 3" "$(seq 3 | tr '\n' ' ' | sed 's/ $//')" "seq LAST counts from 1"
+  assert_equal "10 7 4 1" "$(seq 10 -3 1 | tr '\n' ' ' | sed 's/ $//')" "seq FIRST INCR LAST counts down with a negative increment"
+  assert_equal "-3 -2 -1 00 01 02" "$(seq -w -3 2 | tr '\n' ' ' | sed 's/ $//')" "seq -w pads to equal width and accepts a negative first operand"
+  assert_equal "1,2,3" "$(seq -s, 3)" "seq -s sets the separator"
+  assert_equal "" "$(seq 5 1)" "seq prints nothing when LAST is below FIRST"
+  seq 1 0 3 2>/dev/null
+  assert_equal "1" "$?" "seq with a zero increment fails"
+  seq a 2>/dev/null
+  assert_equal "1" "$?" "seq with a non-integer operand fails"
+fi
+
+if help stat >/dev/null 2>&1; then
+  D=$(mktemp -d)
+  echo hello > "$D/f"
+  chmod 640 "$D/f"
+  ln -s f "$D/l"
+  assert_equal "6 640 regular file" "$(stat -c '%s %a %F' "$D/f")" "stat -c prints size, octal mode and type"
+  assert_equal "symbolic link" "$(stat -c %F "$D/l")" "stat does not follow a symlink"
+  assert_equal "regular file" "$(stat -L -c %F "$D/l")" "stat -L follows it"
+  assert_equal "'$D/l' -> 'f'" "$(stat -c %N "$D/l")" "stat %N shows the link target"
+  assert_equal "[6    ][00000006]" "$(stat -c '[%-5s][%08s]' "$D/f")" "stat conversions take - and 0 flags and a width"
+  stat "$D/missing" 2>/dev/null
+  assert_equal "1" "$?" "stat of a missing file fails"
+  assert_match "$(stat "$D/f" | sed -n 2p)" "*Size: 6*" "stat without -c prints the Size line"
+  rm -rf "$D"
+fi
+
+if help ps >/dev/null 2>&1 && [ -r /proc/self/stat ]; then
+  assert_match "$(ps -e | sed -n 1p)" "*PID TTY*TIME CMD" "ps prints its header"
+  assert_equal "1" "$(ps -e | grep -c "^ *$$ ")" "ps -e lists this shell exactly once"
+fi
+
 summary

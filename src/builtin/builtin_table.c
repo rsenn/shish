@@ -26,6 +26,15 @@
 #ifndef BUILTIN_CHGRP
 #define BUILTIN_CHGRP 0
 #endif
+#ifndef BUILTIN_PS
+#define BUILTIN_PS 0
+#endif
+#ifndef BUILTIN_SEQ
+#define BUILTIN_SEQ 0
+#endif
+#ifndef BUILTIN_STAT
+#define BUILTIN_STAT 0
+#endif
 #ifndef BUILTIN_CHOWN
 #define BUILTIN_CHOWN 0
 #endif
@@ -603,6 +612,15 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_CHGRP
     {"chgrp", &builtin_chgrp, B_DEFAULT, "[-Rhf] GROUP file...", help_chgrp},
+#endif
+#if BUILTIN_PS
+    {"ps", &builtin_ps, B_DEFAULT, "[-eAf] [-p list] [-o format]", help_ps},
+#endif
+#if BUILTIN_SEQ
+    {"seq", &builtin_seq, B_DEFAULT, "[-w] [-s sep] [first [incr]] last", help_seq},
+#endif
+#if BUILTIN_STAT
+    {"stat", &builtin_stat, B_DEFAULT, "[-L] [-c format] file...", help_stat},
 #endif
 #if BUILTIN_CHOWN
     {"chown", &builtin_chown, B_DEFAULT, "[-Rhf] OWNER[:GROUP] file...", help_chown},

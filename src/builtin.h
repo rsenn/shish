@@ -46,6 +46,10 @@ int builtin_popd(int argc, char* argv[]);
 int builtin_pushd(int argc, char* argv[]);
 int builtin_chmod(int argc, char* argv[]);
 int builtin_chown(int argc, char* argv[]);
+int id_name(const char* file, unsigned long id, stralloc* out); /* src/builtin/core/id_name.c */
+int builtin_stat(int argc, char* argv[]);
+int builtin_seq(int argc, char* argv[]);
+int builtin_ps(int argc, char* argv[]);
 int builtin_chgrp(int argc, char* argv[]);
 int builtin_command(int argc, char* argv[]);
 int chmod_symbolic(const char* spec, unsigned int* mode, int is_dir);      /* src/builtin/core/builtin_chmod.c */
@@ -237,6 +241,9 @@ extern const char help_wc[];
 extern const char help_pgrep[];
 extern const char help_pkill[];
 extern const char help_chown[];
+extern const char help_stat[];
+extern const char help_seq[];
+extern const char help_ps[];
 extern const char help_chgrp[];
 extern const char help_uptime[];
 extern const char help_vmstat[];
