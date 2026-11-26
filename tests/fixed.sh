@@ -6798,4 +6798,16 @@ if help skill >/dev/null 2>&1; then
   kill $P
 fi
 
+## uptime and vmstat used printf/snprintf/sscanf and names that do not exist,
+## so neither compiled; they now report from /proc
+if help uptime >/dev/null 2>&1 && [ -r /proc/uptime ]; then
+  assert_match "$(uptime)" "* up *load average: *" "uptime prints the time, the uptime, users and the load average"
+  assert_match "$(uptime -s)" "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]" "uptime -s prints the boot time as yyyy-mm-dd HH:MM:SS"
+fi
+
+if help vmstat >/dev/null 2>&1 && [ -r /proc/vmstat ]; then
+  assert_equal "3" "$(vmstat | wc -l)" "vmstat prints two header lines and one report line"
+  assert_match "$(vmstat -s | sed -n 1p)" "* K total memory" "vmstat -s starts with the total memory in K"
+fi
+
 summary

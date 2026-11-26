@@ -100,6 +100,8 @@ uncompress  filter/builtin_uncompress.c     x   filter/builtin_compress.c
 uniq        filter/builtin_uniq.c           x   -
 unlink      core/builtin_unlink.c           x   -
 unset       builtin_unset.c                 m   -
+uptime      extra/builtin_uptime.c          x   -
+vmstat      extra/builtin_vmstat.c          x   -
 wait        builtin_wait.c                  m   -
 wc          core/builtin_wc.c               x   -
 which       extra/builtin_which.c           x   -

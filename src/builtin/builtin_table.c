@@ -254,6 +254,12 @@
 #ifndef BUILTIN_SNICE
 #define BUILTIN_SNICE 0
 #endif
+#ifndef BUILTIN_UPTIME
+#define BUILTIN_UPTIME 0
+#endif
+#ifndef BUILTIN_VMSTAT
+#define BUILTIN_VMSTAT 0
+#endif
 #ifndef BUILTIN_PKILL
 #define BUILTIN_PKILL 0
 #endif
@@ -582,6 +588,12 @@ struct builtin_cmd builtin_table[] = {
 #endif
 #if BUILTIN_SNICE
     {"snice", &builtin_snice, B_DEFAULT, "[-finv] [+|-]priority [-t tty] [-u user] [-p pid] [-c command] ...", help_snice},
+#endif
+#if BUILTIN_UPTIME
+    {"uptime", &builtin_uptime, B_DEFAULT, "[-ps]", help_uptime},
+#endif
+#if BUILTIN_VMSTAT
+    {"vmstat", &builtin_vmstat, B_DEFAULT, "[-afs] [-S unit] [delay [count]]", help_vmstat},
 #endif
 #if BUILTIN_PKILL
     {"pkill", &builtin_pkill, B_DEFAULT, "[-fixv] [-signal] pattern", help_pkill},
