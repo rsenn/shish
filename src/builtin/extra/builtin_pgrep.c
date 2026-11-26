@@ -33,7 +33,7 @@ proc_matches(pid_t pid, rx_t* re, const char* pattern, int full, int exact, int 
   stralloc sa;
 
   stralloc_init(&sa);
-  fmt_ulong(path, (unsigned long)pid);
+  path[fmt_ulong(path, (unsigned long)pid)] = 0;
   stralloc_copys(&sa, "/proc/");
   stralloc_cats(&sa, path);
   stralloc_cats(&sa, full ? "/cmdline" : "/comm");
@@ -41,7 +41,17 @@ proc_matches(pid_t pid, rx_t* re, const char* pattern, int full, int exact, int 
   if((fd = open_read(sa.s)) != -1) {
     stralloc_zero(&sa);
 
-    if(readclose_append(fd, &sa, 1024) > 0) {
+    if(readclose_append(fd, &sa, 1024) >= 0) {
+      size_t i;
+
+      /* cmdline separates the arguments with NULs; comm ends in a newline */
+      for(i = 0; i < sa.len; i++)
+        if(!sa.s[i])
+          sa.s[i] = ' ';
+
+      while(sa.len && (sa.s[sa.len - 1] == '\n' || sa.s[sa.len - 1] == ' '))
+        sa.len--;
+
       stralloc_nul(&sa);
 
       if(exact) {
@@ -97,19 +107,16 @@ builtin_pgrep(int argc, char* argv[]) {
   }
 
   while((e = readdir(d))) {
-    pid_t pid;
+    unsigned long pid;
 
-    if(scan_ulong(e->d_name, (unsigned long*)&pid) == 0)
+    if(scan_ulong(e->d_name, &pid) == 0 || (pid_t)pid == getpid())
       continue;
 
-    if(pid == getpid())
-      continue;
+    if(proc_matches((pid_t)pid, &re, pattern, full, exact, inverse)) {
+      n++;
 
-    if(proc_matches(pid, &re, pattern, full, exact, inverse)) {
-      if(count)
-        n++;
-      else {
-        buffer_putulong(fd_out->w, (unsigned long)pid);
+      if(!count) {
+        buffer_putulong(fd_out->w, pid);
 
         if(list) {
           int fd;
@@ -120,7 +127,7 @@ builtin_pgrep(int argc, char* argv[]) {
           /* print name */
           stralloc sa;
           stralloc_init(&sa);
-          fmt_ulong(path, (unsigned long)pid);
+          path[fmt_ulong(path, pid)] = 0;
           stralloc_copys(&sa, "/proc/");
           stralloc_cats(&sa, path);
           stralloc_cats(&sa, "/comm");
@@ -128,7 +135,11 @@ builtin_pgrep(int argc, char* argv[]) {
           if((fd = open_read(sa.s)) != -1) {
             stralloc_zero(&sa);
             readclose_append(fd, &sa, 1024);
-            buffer_puts(fd_out->w, sa.s);
+
+            while(sa.len && sa.s[sa.len - 1] == '\n')
+              sa.len--;
+
+            buffer_put(fd_out->w, sa.s, sa.len);
           }
 
           stralloc_free(&sa);
@@ -149,6 +160,7 @@ builtin_pgrep(int argc, char* argv[]) {
     buffer_putnlflush(fd_out->w);
   }
 
-  return 0;
+  /* 0 if anything matched, else 1 */
+  return n ? 0 : 1;
 }
 #endif

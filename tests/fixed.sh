@@ -6891,4 +6891,20 @@ if help ps >/dev/null 2>&1 && [ -r /proc/self/stat ]; then
   assert_equal "1" "$(ps -e | grep -c "^ *$$ ")" "ps -e lists this shell exactly once"
 fi
 
+## pgrep matched nothing: it opened /proc/<garbage>/comm (fmt_ulong does not NUL-terminate), read
+## the name only when readclose_append() returned > 0 (it returns 0), and compared "name\n"
+if help pgrep >/dev/null 2>&1; then
+  /bin/sleep 30 &
+  P=$!
+  assert_match "$(pgrep -x sleep)" "*$P*" "pgrep -x finds a running process by its exact name"
+  assert_match "$(pgrep 'sle+p')" "*$P*" "pgrep matches an extended regular expression"
+  assert_match "$(pgrep -f 'sleep 30')" "*$P*" "pgrep -f matches the full command line"
+  assert_match "$(pgrep -l -x sleep)" "*$P sleep*" "pgrep -l prints the name after the pid"
+  pgrep -x no-such-process-xyz >/dev/null
+  assert_equal "1" "$?" "pgrep exits 1 when nothing matched"
+  assert_equal "0" "$(pgrep -c no-such-process-xyz)" "pgrep -c counts zero"
+  kill $P
+  wait $P 2>/dev/null
+fi
+
 summary
